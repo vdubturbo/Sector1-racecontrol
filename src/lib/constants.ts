@@ -87,4 +87,5 @@ export const FLAG_COLORS: Record<string, { bg: string; text: string; label: stri
   'safety-car': { bg: '#f59e0b', text: '#000000', label: 'SAFETY CAR' },
   vsc:        { bg: '#f59e0b', text: '#000000', label: 'VSC' },
   none:       { bg: '#333333', text: '#888888', label: 'NO SESSION' },
+  unknown:    { bg: '#333333', text: '#888888', label: 'STANDBY' },
 };

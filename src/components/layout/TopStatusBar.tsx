@@ -1,20 +1,23 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Badge } from '@/components/ui/Badge';
-import type { SessionType } from '@/types/racing';
+import { StatusDot } from '@/components/ui/StatusDot';
+import { FLAG_COLORS } from '@/lib/constants';
+import type { ConnectionState } from '@/hooks/useBridgeSocket';
+import type { FlagColor, SessionType, NormalizedCarPosition, RaceState } from '@/types/racing';
 
 interface TopStatusBarProps {
   eventName: string;
   sessionName: string;
   sessionType: SessionType;
-  timeRemaining: string;
-  carsTotal: number;
-  carsOnTrack: number;
-  carsInPit: number;
-  ambientTemp: number;
-  trackTemp: number;
+  positions: NormalizedCarPosition[];
+  raceState: RaceState | null;
+  connectionState: ConnectionState;
+  ambientTemp?: number;
+  trackTemp?: number;
   leaderLap?: string | null;
-  avatarUrl?: string | null;
+  children?: React.ReactNode;
 }
 
 const SESSION_TYPE_VARIANT: Record<SessionType, 'default' | 'orange' | 'green' | 'red' | 'yellow'> = {
@@ -29,15 +32,30 @@ export function TopStatusBar({
   eventName,
   sessionName,
   sessionType,
-  timeRemaining,
-  carsTotal,
-  carsOnTrack,
-  carsInPit,
+  positions,
+  raceState,
+  connectionState,
   ambientTemp,
   trackTemp,
-  leaderLap,
-  avatarUrl,
+  leaderLap: leaderLapProp,
+  children,
 }: TopStatusBarProps) {
+  const { carsTotal, carsOnTrack, carsInPit } = useMemo(() => {
+    const total = positions.length;
+    const inPit = positions.filter((p) => p.isInPit).length;
+    return { carsTotal: total, carsOnTrack: total - inPit, carsInPit: inPit };
+  }, [positions]);
+
+  const leaderLap = useMemo(() => {
+    if (leaderLapProp) return leaderLapProp;
+    const leader = positions.find((p) => p.overallPosition === 1);
+    return leader ? String(leader.lastLapCompleted) : null;
+  }, [positions, leaderLapProp]);
+
+  const flagColor: FlagColor = raceState?.flagColor ?? 'unknown';
+  const timeRemaining = raceState?.timeRemaining ?? '—:——:——';
+  const flag = FLAG_COLORS[flagColor] || FLAG_COLORS.none;
+
   return (
     <header className="flex items-center gap-4 px-4 py-2 bg-bg-surface border-b border-border-default relative z-10">
       {/* Logo */}
@@ -62,6 +80,32 @@ export function TopStatusBar({
         <Badge variant={SESSION_TYPE_VARIANT[sessionType]}>
           {sessionType}
         </Badge>
+      </div>
+
+      {/* Divider */}
+      <div className="w-px h-8 bg-border-subtle shrink-0" />
+
+      {/* Flag State */}
+      <div
+        className="flex items-center gap-2 px-4 py-1.5 rounded shrink-0"
+        style={{
+          backgroundColor: flag.bg,
+          color: flag.text,
+          boxShadow: flagColor !== 'unknown' ? `0 0 20px ${flag.bg}60` : undefined,
+        }}
+      >
+        <span className="font-bold text-sm tracking-wider font-[var(--font-mono)]">
+          {flag.label}
+        </span>
+      </div>
+
+      {/* Connection Status */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <StatusDot
+          status={connectionState === 'connected' ? 'connected' : connectionState === 'connecting' ? 'connecting' : 'disconnected'}
+          size="sm"
+          pulse={connectionState === 'connected'}
+        />
       </div>
 
       {/* Spacer */}
@@ -121,39 +165,27 @@ export function TopStatusBar({
           </g>
         </svg>
         <span className="font-data text-xs font-semibold text-text-primary">
-          {ambientTemp}°F
+          {ambientTemp != null ? `${ambientTemp}°F` : '—'}
         </span>
       </div>
 
       {/* Track Temp */}
       <div className="flex flex-col items-center shrink-0 mx-1.5">
         <svg className="w-5 h-5 mb-0.5" viewBox="0 0 24 24" fill="none">
-          {/* Road / track surface icon */}
           <path d="M4 20 L10 4 L14 4 L20 20" stroke="#999" strokeWidth="1.5" fill="none" strokeLinejoin="round" />
           <line x1="11" y1="8" x2="13" y2="8" stroke="#999" strokeWidth="1.5" strokeLinecap="round" />
           <line x1="10.5" y1="12" x2="13.5" y2="12" stroke="#999" strokeWidth="1.5" strokeLinecap="round" />
           <line x1="10" y1="16" x2="14" y2="16" stroke="#999" strokeWidth="1.5" strokeLinecap="round" />
-          {/* Heat waves */}
           <path d="M16 6 Q17 5 18 6 Q19 7 20 6" stroke="#f59e0b" strokeWidth="1" fill="none" opacity="0.7" />
           <path d="M16 9 Q17 8 18 9 Q19 10 20 9" stroke="#f59e0b" strokeWidth="1" fill="none" opacity="0.5" />
         </svg>
         <span className="font-data text-xs font-semibold text-accent-amber">
-          {trackTemp}°F
+          {trackTemp != null ? `${trackTemp}°F` : '—'}
         </span>
       </div>
 
-      {/* User Avatar */}
-      <div className="shrink-0 ml-2">
-        <div className="w-9 h-9 rounded-full border-2 border-accent-orange bg-bg-elevated flex items-center justify-center overflow-hidden">
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="User" className="w-full h-full object-cover" />
-          ) : (
-            <svg className="w-5 h-5 text-text-muted" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-            </svg>
-          )}
-        </div>
-      </div>
+      {/* User menu slot */}
+      {children}
     </header>
   );
 }

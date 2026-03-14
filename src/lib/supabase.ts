@@ -1,7 +1,6 @@
-// TODO: Initialize Supabase client
-// import { createClient } from '@supabase/supabase-js';
-// import { SUPABASE_URL, SUPABASE_ANON_KEY } from './constants';
-//
-// export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+import { createClient } from '@supabase/supabase-js';
 
-export {};
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
