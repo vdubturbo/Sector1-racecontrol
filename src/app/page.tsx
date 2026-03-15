@@ -2,10 +2,12 @@
 
 import { useEffect } from 'react';
 import { TopStatusBar } from '@/components/layout/TopStatusBar';
+import { TrackMap } from '@/components/TrackMap';
 import { PanelLauncher } from '@/components/panels/PanelLauncher';
 import { UserMenu } from '@/components/ui/UserMenu';
 import { useBridgeSocket } from '@/hooks/useBridgeSocket';
 import { useAuth } from '@/hooks/useAuth';
+import { useTrackData } from '@/hooks/useTrackData';
 import { useBroadcastChannel } from '@/hooks/useBroadcastChannel';
 import { usePanelManager } from '@/hooks/usePanelManager';
 import { PANELS } from '@/lib/constants';
@@ -13,16 +15,15 @@ import { PANELS } from '@/lib/constants';
 export default function CommandHub() {
   const bridge = useBridgeSocket();
   const auth = useAuth();
+  const track = useTrackData(bridge.selectedEventId);
   const { panelStatuses, openPanel } = usePanelManager();
 
-  // Broadcast flag changes and event selections to all panels
   const { broadcast } = useBroadcastChannel({
     onEventSelected: (msg) => {
       bridge.selectEvent(msg.eventId);
     },
   });
 
-  // Broadcast flag changes when race state updates
   useEffect(() => {
     if (bridge.raceState) {
       broadcast({
@@ -33,7 +34,6 @@ export default function CommandHub() {
     }
   }, [bridge.raceState, broadcast]);
 
-  // Derive event name from available events
   const eventName = bridge.availableEvents.find(
     (e) => e.eventId === bridge.selectedEventId
   )?.name ?? bridge.selectedEventId ?? 'No Event Selected';
@@ -46,7 +46,6 @@ export default function CommandHub() {
         sessionType="race"
         positions={bridge.positions}
         raceState={bridge.raceState}
-        connectionState={bridge.connectionState}
       >
         <UserMenu
           user={auth.user}
@@ -56,9 +55,18 @@ export default function CommandHub() {
         />
       </TopStatusBar>
 
-      {/* Main content area — event selector when no event */}
-      <main className="flex-1 overflow-auto flex items-center justify-center">
-        {bridge.availableEvents.length > 0 && !bridge.selectedEventId && (
+      {/* Main content area */}
+      <main className="flex-1 overflow-auto flex items-start justify-center pt-[100px]">
+        {bridge.selectedEventId ? (
+          <TrackMap
+            coordinates={track.coordinates}
+            corners={track.corners}
+            startFinish={track.startFinish}
+            isLoading={track.isLoading}
+            error={track.error}
+            className="w-full max-h-[calc(100%-100px)]"
+          />
+        ) : bridge.availableEvents.length > 0 ? (
           <div className="flex flex-col items-center gap-4">
             <span className="section-header">SELECT AN EVENT</span>
             <div className="flex flex-col gap-2">
@@ -76,7 +84,7 @@ export default function CommandHub() {
               ))}
             </div>
           </div>
-        )}
+        ) : null}
       </main>
 
       {/* Panel Launcher Navbar */}

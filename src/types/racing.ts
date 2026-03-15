@@ -111,11 +111,13 @@ export interface BridgeConnectedMessage {
   type: 'connected';
   clientId: string;
   eventId?: string;
-  availableEvents?: AvailableEvent[];
+  activeEvents?: string[];
+  availableEvents?: Record<string, unknown>[];
+  isRedMistConnected?: boolean;
 }
 
 export interface BridgePositionsMessage {
-  type: 'positions';
+  type: 'positions' | 'position_update';
   eventId: string;
   positions: NormalizedCarPosition[];
 }

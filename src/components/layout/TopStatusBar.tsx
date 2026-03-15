@@ -2,10 +2,7 @@
 
 import { useMemo } from 'react';
 import { Badge } from '@/components/ui/Badge';
-import { StatusDot } from '@/components/ui/StatusDot';
-import { FLAG_COLORS } from '@/lib/constants';
-import type { ConnectionState } from '@/hooks/useBridgeSocket';
-import type { FlagColor, SessionType, NormalizedCarPosition, RaceState } from '@/types/racing';
+import type { SessionType, NormalizedCarPosition, RaceState } from '@/types/racing';
 
 interface TopStatusBarProps {
   eventName: string;
@@ -13,7 +10,6 @@ interface TopStatusBarProps {
   sessionType: SessionType;
   positions: NormalizedCarPosition[];
   raceState: RaceState | null;
-  connectionState: ConnectionState;
   ambientTemp?: number;
   trackTemp?: number;
   leaderLap?: string | null;
@@ -34,7 +30,6 @@ export function TopStatusBar({
   sessionType,
   positions,
   raceState,
-  connectionState,
   ambientTemp,
   trackTemp,
   leaderLap: leaderLapProp,
@@ -52,9 +47,7 @@ export function TopStatusBar({
     return leader ? String(leader.lastLapCompleted) : null;
   }, [positions, leaderLapProp]);
 
-  const flagColor: FlagColor = raceState?.flagColor ?? 'unknown';
   const timeRemaining = raceState?.timeRemaining ?? '—:——:——';
-  const flag = FLAG_COLORS[flagColor] || FLAG_COLORS.none;
 
   return (
     <header className="flex items-center gap-4 px-4 py-2 bg-bg-surface border-b border-border-default relative z-10">
@@ -75,37 +68,9 @@ export function TopStatusBar({
         <span className="text-text-primary text-sm font-medium truncate max-w-48">
           {eventName}
         </span>
-        <span className="text-text-muted text-sm">—</span>
-        <span className="text-text-secondary text-sm">{sessionName}</span>
         <Badge variant={SESSION_TYPE_VARIANT[sessionType]}>
           {sessionType}
         </Badge>
-      </div>
-
-      {/* Divider */}
-      <div className="w-px h-8 bg-border-subtle shrink-0" />
-
-      {/* Flag State */}
-      <div
-        className="flex items-center gap-2 px-4 py-1.5 rounded shrink-0"
-        style={{
-          backgroundColor: flag.bg,
-          color: flag.text,
-          boxShadow: flagColor !== 'unknown' ? `0 0 20px ${flag.bg}60` : undefined,
-        }}
-      >
-        <span className="font-bold text-sm tracking-wider font-[var(--font-mono)]">
-          {flag.label}
-        </span>
-      </div>
-
-      {/* Connection Status */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        <StatusDot
-          status={connectionState === 'connected' ? 'connected' : connectionState === 'connecting' ? 'connecting' : 'disconnected'}
-          size="sm"
-          pulse={connectionState === 'connected'}
-        />
       </div>
 
       {/* Spacer */}

@@ -146,17 +146,32 @@ export function useBridgeSocket(initialEventId?: string): BridgeState & BridgeAc
       setLastUpdate(new Date());
 
       switch (data.type) {
-        case 'connected':
-          if (data.availableEvents) {
-            setAvailableEvents(data.availableEvents);
+        case 'connected': {
+          // Raw events from bridge may be RedMist objects with eid/en/EventID/EventName fields
+          const rawEvents: unknown[] = (data.availableEvents || data.activeEvents || []) as unknown[];
+          if (rawEvents.length > 0) {
+            const normalized = rawEvents.map((evt: unknown) => {
+              const e = evt as Record<string, unknown>;
+              // Handle both string eventIds (from activeEvents) and full objects
+              if (typeof evt === 'string') {
+                return { eventId: evt, name: evt };
+              }
+              return {
+                eventId: String(e.eid ?? e.EventID ?? e.eventId ?? ''),
+                name: String(e.en ?? e.EventName ?? e.name ?? 'Unnamed Event'),
+              };
+            });
+            setAvailableEvents(normalized.filter((e) => e.eventId));
           }
           // If we have a selected event, subscribe
           if (selectedEventIdRef.current && wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({ type: 'subscribe', eventId: selectedEventIdRef.current }));
           }
           break;
+        }
 
         case 'positions':
+        case 'position_update':
           setPositions(
             (data.positions || []).map((p) => normalizePosition(p as unknown as Record<string, unknown>))
           );
@@ -251,21 +266,7 @@ export function useBridgeSocket(initialEventId?: string): BridgeState & BridgeAc
     }
   }, []);
 
-  // Fetch available events on mount
-  useEffect(() => {
-    fetch(`${config.bridgeHttpUrl}/available-events`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (mountedRef.current && Array.isArray(data)) {
-          setAvailableEvents(data);
-        }
-      })
-      .catch(() => {
-        // Non-critical — events will come via WS 'connected' message
-      });
-  }, []);
-
-  // Connect on mount
+  // Connect on mount (available events come via WS 'connected' message)
   useEffect(() => {
     mountedRef.current = true;
     connect();
