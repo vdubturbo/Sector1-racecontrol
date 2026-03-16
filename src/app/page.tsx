@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { TopStatusBar } from '@/components/layout/TopStatusBar';
 import { TrackMap } from '@/components/TrackMap';
+import { RaceLog } from '@/components/RaceLog';
 import { PanelLauncher } from '@/components/panels/PanelLauncher';
 import { UserMenu } from '@/components/ui/UserMenu';
 import { useBridgeSocket } from '@/hooks/useBridgeSocket';
@@ -86,17 +87,20 @@ export default function CommandHub() {
       </div>
 
       {/* Main content area */}
-      <main className="flex-1 overflow-auto flex items-start justify-center pt-6">
+      <main className="flex-1 overflow-auto pt-2">
         {bridge.selectedEventId ? (
-          <TrackMap
-            coordinates={track.coordinates}
-            corners={track.corners}
-            startFinish={track.startFinish}
-            rotation={track.rotation}
-            isLoading={track.isLoading}
-            error={track.error}
-            className="w-full max-h-[calc(100%-100px)]"
-          />
+          <div className="flex flex-col items-center gap-3 px-6">
+            <TrackMap
+              coordinates={track.coordinates}
+              corners={track.corners}
+              startFinish={track.startFinish}
+              rotation={track.rotation}
+              isLoading={track.isLoading}
+              error={track.error}
+              className="w-full max-w-4xl"
+            />
+            <RaceLog className="w-full max-w-5xl" />
+          </div>
         ) : bridge.availableEvents.length > 0 ? (
           <div className="flex flex-col items-center gap-4">
             <span className="section-header">SELECT AN EVENT</span>
