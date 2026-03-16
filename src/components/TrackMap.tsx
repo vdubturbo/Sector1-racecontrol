@@ -7,6 +7,7 @@ interface TrackMapProps {
   coordinates: TrackCoordinate[];
   corners: TrackCorner[];
   startFinish: TrackStartFinish | null;
+  rotation?: number;
   isLoading: boolean;
   error: string | null;
   className?: string;
@@ -15,21 +16,37 @@ interface TrackMapProps {
 const SECTOR_COLORS = ['#22c55e', '#3b82f6', '#e8751a']; // green, blue, orange
 const SECTOR_LABELS = ['S1', 'S2', 'S3'];
 
-export function TrackMap({ coordinates, corners, startFinish, isLoading, error, className = '' }: TrackMapProps) {
+export function TrackMap({ coordinates, corners, startFinish, rotation = 0, isLoading, error, className = '' }: TrackMapProps) {
   const { pathData, viewBox, sectorPaths, sectorLabelPositions } = useMemo(() => {
     if (coordinates.length === 0) return { pathData: '', viewBox: '0 0 1000 1000', sectorPaths: [], sectorLabelPositions: [] };
 
+    // Compute center for rotation
+    let sumX = 0, sumY = 0;
+    for (const c of coordinates) { sumX += c.x; sumY += c.y; }
+    const cx = sumX / coordinates.length;
+    const cy = sumY / coordinates.length;
+
+    // Compute bounding box of rotated coordinates
+    const rad = (rotation * Math.PI) / 180;
+    const cosR = Math.cos(rad);
+    const sinR = Math.sin(rad);
+
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const c of coordinates) {
-      if (c.x < minX) minX = c.x;
-      if (c.x > maxX) maxX = c.x;
-      if (c.y < minY) minY = c.y;
-      if (c.y > maxY) maxY = c.y;
+      // Rotate point around center
+      const dx = c.x - cx;
+      const dy = c.y - cy;
+      const rx = cx + dx * cosR - dy * sinR;
+      const ry = cy + dx * sinR + dy * cosR;
+      if (rx < minX) minX = rx;
+      if (rx > maxX) maxX = rx;
+      if (ry < minY) minY = ry;
+      if (ry > maxY) maxY = ry;
     }
 
     const rangeX = maxX - minX || 1;
     const rangeY = maxY - minY || 1;
-    const padding = Math.max(rangeX, rangeY) * 0.1;
+    const padding = Math.max(rangeX, rangeY) * 0.12;
 
     const vbX = minX - padding;
     const vbY = minY - padding;
@@ -64,7 +81,7 @@ export function TrackMap({ coordinates, corners, startFinish, isLoading, error, 
       sectorPaths,
       sectorLabelPositions,
     };
-  }, [coordinates]);
+  }, [coordinates, rotation]);
 
   // Compute label offset direction (push outward from track center)
   const trackCenter = useMemo(() => {
@@ -108,6 +125,7 @@ export function TrackMap({ coordinates, corners, startFinish, isLoading, error, 
         viewBox={viewBox}
         preserveAspectRatio="xMidYMid meet"
       >
+        <g transform={`rotate(${rotation}, ${trackCenter.cx}, ${trackCenter.cy})`}>
         {/* Track surface fill */}
         <path
           d={pathData}
@@ -208,6 +226,7 @@ export function TrackMap({ coordinates, corners, startFinish, isLoading, error, 
             </g>
           );
         })}
+        </g>
       </svg>
     </div>
   );

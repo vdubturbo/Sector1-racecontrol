@@ -28,6 +28,7 @@ interface TrackDataState {
   coordinates: TrackCoordinate[];
   corners: TrackCorner[];
   startFinish: TrackStartFinish | null;
+  rotation: number;
   trackId: string | null;
   isLoading: boolean;
   error: string | null;
@@ -41,6 +42,7 @@ export function useTrackData(redmistEventId: string | null): TrackDataState {
   const [coordinates, setCoordinates] = useState<TrackCoordinate[]>([]);
   const [corners, setCorners] = useState<TrackCorner[]>([]);
   const [startFinish, setStartFinish] = useState<TrackStartFinish | null>(null);
+  const [rotation, setRotation] = useState(0);
   const [trackId, setTrackId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +52,7 @@ export function useTrackData(redmistEventId: string | null): TrackDataState {
       setCoordinates([]);
       setCorners([]);
       setStartFinish(null);
+      setRotation(0);
       setTrackId(null);
       return;
     }
@@ -89,7 +92,7 @@ export function useTrackData(redmistEventId: string | null): TrackDataState {
             // If we already have track_id, skip the next lookup
             if (events[0].track_id) {
               setTrackId(events[0].track_id);
-              await fetchTrackData(events[0].track_id, cancelled, setCoordinates, setCorners, setStartFinish, setError);
+              await fetchTrackData(events[0].track_id, cancelled, setCoordinates, setCorners, setStartFinish, setRotation, setError);
               return;
             }
           }
@@ -106,7 +109,7 @@ export function useTrackData(redmistEventId: string | null): TrackDataState {
           if (directEvent && directEvent.length > 0 && directEvent[0].track_id) {
             if (cancelled) return;
             setTrackId(directEvent[0].track_id);
-            await fetchTrackData(directEvent[0].track_id, cancelled, setCoordinates, setCorners, setStartFinish, setError);
+            await fetchTrackData(directEvent[0].track_id, cancelled, setCoordinates, setCorners, setStartFinish, setRotation, setError);
             return;
           }
 
@@ -130,7 +133,7 @@ export function useTrackData(redmistEventId: string | null): TrackDataState {
         }
 
         setTrackId(event.track_id);
-        await fetchTrackData(event.track_id, cancelled, setCoordinates, setCorners, setStartFinish, setError);
+        await fetchTrackData(event.track_id, cancelled, setCoordinates, setCorners, setStartFinish, setRotation, setError);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load track');
@@ -143,7 +146,7 @@ export function useTrackData(redmistEventId: string | null): TrackDataState {
     return () => { cancelled = true; };
   }, [redmistEventId]);
 
-  return { coordinates, corners, startFinish, trackId, isLoading, error };
+  return { coordinates, corners, startFinish, rotation, trackId, isLoading, error };
 }
 
 async function fetchTrackData(
@@ -152,14 +155,33 @@ async function fetchTrackData(
   setCoordinates: (coords: TrackCoordinate[]) => void,
   setCorners: (corners: TrackCorner[]) => void,
   setStartFinish: (sf: TrackStartFinish | null) => void,
+  setRotation: (rotation: number) => void,
   setError: (error: string | null) => void
 ) {
-  const { data: trackData, error: trackError } = await supabase
-    .from('track_data')
-    .select('coordinates, reference_points')
-    .eq('track_id', trackId)
-    .order('created_at', { ascending: false })
-    .limit(1);
+  // Fetch track geometry and track metadata in parallel
+  const [trackDataResult, trackMetaResult] = await Promise.all([
+    supabase
+      .from('track_data')
+      .select('coordinates, reference_points')
+      .eq('track_id', trackId)
+      .order('created_at', { ascending: false })
+      .limit(1),
+    supabase
+      .from('tracks')
+      .select('metadata')
+      .eq('id', trackId)
+      .single(),
+  ]);
+
+  if (cancelled) return;
+
+  // Apply rotation from track metadata
+  const meta = trackMetaResult.data?.metadata as { rotation?: number } | null;
+  if (meta?.rotation != null) {
+    setRotation(meta.rotation);
+  }
+
+  const { data: trackData, error: trackError } = trackDataResult;
 
   if (cancelled) return;
 

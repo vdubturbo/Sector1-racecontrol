@@ -1,18 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
 import { Badge } from '@/components/ui/Badge';
-import type { SessionType, NormalizedCarPosition, RaceState } from '@/types/racing';
+import type { SessionType } from '@/types/racing';
 
 interface TopStatusBarProps {
   eventName: string;
-  sessionName: string;
   sessionType: SessionType;
-  positions: NormalizedCarPosition[];
-  raceState: RaceState | null;
   ambientTemp?: number;
   trackTemp?: number;
-  leaderLap?: string | null;
   children?: React.ReactNode;
 }
 
@@ -26,28 +21,11 @@ const SESSION_TYPE_VARIANT: Record<SessionType, 'default' | 'orange' | 'green' |
 
 export function TopStatusBar({
   eventName,
-  sessionName,
   sessionType,
-  positions,
-  raceState,
   ambientTemp,
   trackTemp,
-  leaderLap: leaderLapProp,
   children,
 }: TopStatusBarProps) {
-  const { carsTotal, carsOnTrack, carsInPit } = useMemo(() => {
-    const total = positions.length;
-    const inPit = positions.filter((p) => p.isInPit).length;
-    return { carsTotal: total, carsOnTrack: total - inPit, carsInPit: inPit };
-  }, [positions]);
-
-  const leaderLap = useMemo(() => {
-    if (leaderLapProp) return leaderLapProp;
-    const leader = positions.find((p) => p.overallPosition === 1);
-    return leader ? String(leader.lastLapCompleted) : null;
-  }, [positions, leaderLapProp]);
-
-  const timeRemaining = raceState?.timeRemaining ?? '—:——:——';
 
   return (
     <header className="flex items-center gap-4 px-4 py-2 bg-bg-surface border-b border-border-default relative z-10">
@@ -60,12 +38,12 @@ export function TopStatusBar({
         />
       </div>
 
-      {/* Divider */}
-      <div className="w-px h-8 bg-border-subtle shrink-0" />
+      {/* Spacer */}
+      <div className="flex-1" />
 
-      {/* Session Info */}
+      {/* Session Info — centered */}
       <div className="flex items-center gap-2 shrink-0">
-        <span className="text-text-primary text-sm font-medium truncate max-w-48">
+        <span className="text-text-primary text-3xl font-semibold tracking-wide uppercase" style={{ fontFamily: 'var(--font-sans)' }}>
           {eventName}
         </span>
         <Badge variant={SESSION_TYPE_VARIANT[sessionType]}>
@@ -75,44 +53,6 @@ export function TopStatusBar({
 
       {/* Spacer */}
       <div className="flex-1" />
-
-      {/* Time Remaining — centered */}
-      <div className="flex flex-col items-center shrink-0">
-        <span className="section-header text-[0.5625rem]">REMAINING</span>
-        <span className="font-data text-3xl font-bold text-accent-orange tracking-tight leading-tight">
-          {timeRemaining}
-        </span>
-      </div>
-
-      {/* Spacer */}
-      <div className="flex-1" />
-
-      {/* Car Count */}
-      <div className="flex flex-col items-center shrink-0 mx-2">
-        <span className="section-header text-[0.5625rem]">CARS</span>
-        <div className="flex items-center gap-2 text-xs font-[var(--font-mono)]">
-          <span className="text-text-primary font-semibold">{carsTotal}</span>
-          <span className="text-text-muted">/</span>
-          <span className="text-status-green">{carsOnTrack}</span>
-          <span className="text-text-muted">/</span>
-          <span className="text-status-yellow">{carsInPit}</span>
-        </div>
-        <span className="text-[0.5rem] text-text-muted">TOT / TRK / PIT</span>
-      </div>
-
-      {/* Divider */}
-      <div className="w-px h-8 bg-border-subtle shrink-0" />
-
-      {/* Leader Lap */}
-      <div className="flex flex-col items-center shrink-0 mx-2 border border-border-subtle rounded px-3 py-1">
-        <div className="flex items-center gap-3">
-          <span className="section-header text-[0.5625rem]">LEADER</span>
-          <span className="section-header text-[0.5625rem]">LAP</span>
-        </div>
-        <span className="font-data text-sm font-bold text-text-primary tracking-wider leading-tight">
-          {leaderLap ?? '— —'}
-        </span>
-      </div>
 
       {/* Ambient Temp */}
       <div className="flex flex-col items-center shrink-0 mx-1.5">

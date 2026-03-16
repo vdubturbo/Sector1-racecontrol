@@ -42,10 +42,7 @@ export default function CommandHub() {
     <div className="flex flex-col h-screen">
       <TopStatusBar
         eventName={eventName}
-        sessionName="Race"
         sessionType="race"
-        positions={bridge.positions}
-        raceState={bridge.raceState}
       >
         <UserMenu
           user={auth.user}
@@ -55,13 +52,47 @@ export default function CommandHub() {
         />
       </TopStatusBar>
 
+      {/* Metric Containers */}
+      <div className="flex justify-center items-center gap-4 py-3">
+        {/* Cars On Track */}
+        <div className="flex flex-col items-center px-6 py-2 bg-bg-card border-2 border-[#999999] rounded-lg">
+          <span className="section-header text-[0.5rem] mb-0.5">CARS ON TRACK</span>
+          <span className="font-data text-4xl font-bold text-status-green tracking-tight leading-none">
+            {bridge.positions.length - bridge.positions.filter((p) => p.isInPit).length}
+          </span>
+          <span className="text-[0.5rem] text-text-muted mt-0.5 font-[var(--font-mono)]">
+            of {bridge.positions.length}
+          </span>
+        </div>
+
+        {/* Remaining Time */}
+        <div className="flex flex-col items-center px-10 py-3 bg-bg-card border-2 border-[#999999] rounded-lg">
+          <span className="section-header text-[0.5625rem] mb-1">REMAINING</span>
+          <span className="font-data text-6xl font-bold text-accent-orange tracking-tight leading-none">
+            {bridge.raceState?.timeRemaining ?? '—:——:——'}
+          </span>
+        </div>
+
+        {/* Leader Lap */}
+        <div className="flex flex-col items-center px-6 py-2 bg-bg-card border-2 border-[#999999] rounded-lg">
+          <span className="section-header text-[0.5rem] mb-0.5">LEADER LAP</span>
+          <span className="font-data text-4xl font-bold text-text-primary tracking-tight leading-none">
+            {(() => {
+              const leader = bridge.positions.find((p) => p.overallPosition === 1);
+              return leader ? leader.lastLapCompleted : '—';
+            })()}
+          </span>
+        </div>
+      </div>
+
       {/* Main content area */}
-      <main className="flex-1 overflow-auto flex items-start justify-center pt-[100px]">
+      <main className="flex-1 overflow-auto flex items-start justify-center pt-6">
         {bridge.selectedEventId ? (
           <TrackMap
             coordinates={track.coordinates}
             corners={track.corners}
             startFinish={track.startFinish}
+            rotation={track.rotation}
             isLoading={track.isLoading}
             error={track.error}
             className="w-full max-h-[calc(100%-100px)]"

@@ -61,6 +61,7 @@ export default function TrackMapPanel() {
           coordinates={track.coordinates}
           corners={track.corners}
           startFinish={track.startFinish}
+          rotation={track.rotation}
           isLoading={track.isLoading}
           error={track.error}
           className="flex-1"
