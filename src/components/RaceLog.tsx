@@ -2,16 +2,16 @@
 
 import { useState, useMemo } from 'react';
 
-type ActionType = 'no-action' | 'warning' | 'penalty' | 'black-flag' | 'dq';
+export type ActionType = 'no-action' | 'warning' | 'penalty' | 'black-flag' | 'dq';
 
-interface CarDetail {
+export interface CarDetail {
   carNumber: string;
   teamName: string;
   driverName: string;
   manufacturer: string;
 }
 
-interface RaceLogEntry {
+export interface RaceLogEntry {
   id: string;
   timestamp: string;
   carNumbers: string[];
@@ -22,7 +22,7 @@ interface RaceLogEntry {
   cars: CarDetail[];
 }
 
-const ACTION_STYLES: Record<ActionType, { label: string; bg: string; text: string; border: string }> = {
+export const ACTION_STYLES: Record<ActionType, { label: string; bg: string; text: string; border: string }> = {
   'no-action':  { label: 'No Action',   bg: 'bg-status-green/15', text: 'text-status-green', border: 'border-status-green/40' },
   'warning':    { label: 'Warning',     bg: 'bg-status-yellow/15', text: 'text-status-yellow', border: 'border-status-yellow/40' },
   'penalty':    { label: 'Penalty',     bg: 'bg-accent-orange/15', text: 'text-accent-orange', border: 'border-accent-orange/40' },
@@ -30,7 +30,7 @@ const ACTION_STYLES: Record<ActionType, { label: string; bg: string; text: strin
   'dq':         { label: 'DQ',          bg: 'bg-status-red/15', text: 'text-status-red', border: 'border-status-red/40' },
 };
 
-const SAMPLE_ENTRIES: RaceLogEntry[] = [
+export const SAMPLE_ENTRIES: RaceLogEntry[] = [
   {
     id: '1',
     timestamp: '02:14 PM',
@@ -171,15 +171,21 @@ function computePenaltyCounts(entries: RaceLogEntry[]) {
 }
 
 interface RaceLogProps {
+  entries?: RaceLogEntry[];
+  /** Show Update button per row. TODO: Gate behind role-based access — only visible to
+   *  users with roles: admin, developer, race_control, race_engineer */
+  showUpdate?: boolean;
+  onUpdate?: (entry: RaceLogEntry) => void;
   className?: string;
 }
 
-export function RaceLog({ className = '' }: RaceLogProps) {
+export function RaceLog({ entries, showUpdate = false, onUpdate, className = '' }: RaceLogProps) {
+  const data = entries ?? SAMPLE_ENTRIES;
   const [hoveredEntry, setHoveredEntry] = useState<string | null>(null);
 
   const { carCounts, driverCounts } = useMemo(
-    () => computePenaltyCounts(SAMPLE_ENTRIES),
-    []
+    () => computePenaltyCounts(data),
+    [data]
   );
 
   return (
@@ -188,22 +194,23 @@ export function RaceLog({ className = '' }: RaceLogProps) {
       <div className="flex items-center justify-between px-5 py-3 border-b border-border-default">
         <span className="section-header text-sm">RACE CONTROL LOG</span>
         <span className="text-[0.625rem] text-text-muted font-[var(--font-mono)]">
-          {SAMPLE_ENTRIES.length} entries
+          {data.length} entries
         </span>
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[5rem_3.5rem_1fr_1fr_6rem] gap-3 px-5 py-2 border-b border-border-default text-xs uppercase tracking-wider text-text-secondary font-semibold">
+      <div className={`grid ${showUpdate ? 'grid-cols-[5rem_3.5rem_1fr_1fr_6rem_5rem]' : 'grid-cols-[5rem_3.5rem_1fr_1fr_6rem]'} gap-3 px-5 py-2 border-b border-border-default text-xs uppercase tracking-wider text-text-secondary font-semibold`}>
         <span>Car</span>
         <span>Stn</span>
         <span>Infraction</span>
         <span>Notes</span>
         <span className="text-right">Action</span>
+        {showUpdate && <span />}
       </div>
 
       {/* Entries */}
       <div className="max-h-[400px] overflow-y-auto">
-        {SAMPLE_ENTRIES.map((entry) => {
+        {data.map((entry) => {
           const action = ACTION_STYLES[entry.action];
           const isHovered = hoveredEntry === entry.id;
 
@@ -215,7 +222,7 @@ export function RaceLog({ className = '' }: RaceLogProps) {
               className={`border-b border-border-default/50 transition-colors ${isHovered ? 'bg-bg-elevated' : 'hover:bg-bg-hover'}`}
             >
               <div
-                className="grid grid-cols-[5rem_3.5rem_1fr_1fr_6rem] gap-3 px-5 py-2.5 items-center"
+                className={`grid ${showUpdate ? 'grid-cols-[5rem_3.5rem_1fr_1fr_6rem_5rem]' : 'grid-cols-[5rem_3.5rem_1fr_1fr_6rem]'} gap-3 px-5 py-2.5 items-center`}
               >
                 {/* Car numbers */}
                 <div className="flex items-center gap-1 flex-wrap">
@@ -252,6 +259,18 @@ export function RaceLog({ className = '' }: RaceLogProps) {
                     {action.label}
                   </span>
                 </div>
+
+                {/* Update button — TODO: Gate behind role-based access (admin, developer, race_control, race_engineer) */}
+                {showUpdate && (
+                  <div className="flex justify-end">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onUpdate?.(entry); }}
+                      className="px-2 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wider border border-status-blue/40 text-status-blue bg-status-blue/10 rounded hover:bg-status-blue/20 transition-colors"
+                    >
+                      Update
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Expanded car detail rows */}
@@ -309,7 +328,7 @@ export function RaceLog({ className = '' }: RaceLogProps) {
           Newest entries shown first
         </span>
         <span className="text-[0.5625rem] text-text-muted font-[var(--font-mono)]">
-          Last updated: {SAMPLE_ENTRIES[0]?.timestamp ?? '—'}
+          Last updated: {data[0]?.timestamp ?? '—'}
         </span>
       </div>
     </div>
