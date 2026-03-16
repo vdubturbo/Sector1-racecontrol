@@ -74,6 +74,14 @@ export const PANELS: PanelDefinition[] = [
     icon: '📡',
     windowFeatures: 'width=1000,height=800',
   },
+  {
+    id: 'media',
+    name: 'Media',
+    description: 'Video feeds and media management',
+    route: '/panels/media',
+    icon: '🎬',
+    windowFeatures: 'width=1200,height=900',
+  },
 ];
 
 export const FLAG_COLORS: Record<string, { bg: string; text: string; label: string }> = {

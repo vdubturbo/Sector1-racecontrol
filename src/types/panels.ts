@@ -6,7 +6,8 @@ export type PanelId =
   | 'flags'
   | 'track-map'
   | 'classifications'
-  | 'comms';
+  | 'comms'
+  | 'media';
 
 export type PanelStatus = 'closed' | 'connected' | 'disconnected';
 
