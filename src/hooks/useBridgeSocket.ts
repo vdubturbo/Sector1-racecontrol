@@ -147,12 +147,27 @@ export function useBridgeSocket(initialEventId?: string): BridgeState & BridgeAc
 
       switch (data.type) {
         case 'connected': {
-          // Raw events from bridge may be RedMist objects with eid/en/EventID/EventName fields
-          const rawEvents: unknown[] = (data.availableEvents || data.activeEvents || []) as unknown[];
+          // If the bridge already has an active event and we don't, auto-select it
+          if (!selectedEventIdRef.current && data.eventId) {
+            setSelectedEventId(data.eventId);
+            selectedEventIdRef.current = data.eventId;
+          }
+          // If we have a selected event, subscribe
+          if (selectedEventIdRef.current && wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({ type: 'subscribe', eventId: selectedEventIdRef.current }));
+          }
+          // Request full event list with names (bridge responds with events_success)
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({ type: 'getEvents' }));
+          }
+          break;
+        }
+
+        case 'events_success': {
+          const rawEvents: unknown[] = ((data as unknown as Record<string, unknown>).events || []) as unknown[];
           if (rawEvents.length > 0) {
             const normalized = rawEvents.map((evt: unknown) => {
               const e = evt as Record<string, unknown>;
-              // Handle both string eventIds (from activeEvents) and full objects
               if (typeof evt === 'string') {
                 return { eventId: evt, name: evt };
               }
@@ -162,10 +177,6 @@ export function useBridgeSocket(initialEventId?: string): BridgeState & BridgeAc
               };
             });
             setAvailableEvents(normalized.filter((e) => e.eventId));
-          }
-          // If we have a selected event, subscribe
-          if (selectedEventIdRef.current && wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify({ type: 'subscribe', eventId: selectedEventIdRef.current }));
           }
           break;
         }

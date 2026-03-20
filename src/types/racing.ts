@@ -116,6 +116,16 @@ export interface BridgeConnectedMessage {
   isRedMistConnected?: boolean;
 }
 
+export interface BridgeEventsSuccessMessage {
+  type: 'events_success';
+  events: Record<string, unknown>[];
+}
+
+export interface BridgeEventsErrorMessage {
+  type: 'events_error';
+  message: string;
+}
+
 export interface BridgePositionsMessage {
   type: 'positions' | 'position_update';
   eventId: string;
@@ -146,6 +156,8 @@ export interface BridgeTimingEventsMessage {
 
 export type BridgeMessage =
   | BridgeConnectedMessage
+  | BridgeEventsSuccessMessage
+  | BridgeEventsErrorMessage
   | BridgePositionsMessage
   | BridgeFlagStateMessage
   | BridgeCompetitorDataMessage
