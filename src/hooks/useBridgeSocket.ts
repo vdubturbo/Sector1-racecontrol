@@ -30,6 +30,30 @@ export interface BridgeActions {
   reconnect: () => void;
 }
 
+const SELECTED_EVENT_STORAGE_KEY = 'sector1-selected-event-id';
+
+function readStoredEventId(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage.getItem(SELECTED_EVENT_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredEventId(eventId: string | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (eventId) {
+      window.localStorage.setItem(SELECTED_EVENT_STORAGE_KEY, eventId);
+    } else {
+      window.localStorage.removeItem(SELECTED_EVENT_STORAGE_KEY);
+    }
+  } catch {
+    // Ignore storage errors (quota, private mode, etc.)
+  }
+}
+
 const TRACK_FLAG_TO_COLOR: Record<number, FlagColor> = {
   0: 'green',
   1: 'yellow',
@@ -151,6 +175,7 @@ export function useBridgeSocket(initialEventId?: string): BridgeState & BridgeAc
           if (!selectedEventIdRef.current && data.eventId) {
             setSelectedEventId(data.eventId);
             selectedEventIdRef.current = data.eventId;
+            writeStoredEventId(data.eventId);
           }
           // If we have a selected event, subscribe
           if (selectedEventIdRef.current && wsRef.current?.readyState === WebSocket.OPEN) {
@@ -268,6 +293,7 @@ export function useBridgeSocket(initialEventId?: string): BridgeState & BridgeAc
 
   const selectEvent = useCallback((eventId: string) => {
     setSelectedEventId(eventId);
+    writeStoredEventId(eventId);
     setPositions([]);
     setRaceState(null);
     setCompetitors([]);
@@ -280,12 +306,45 @@ export function useBridgeSocket(initialEventId?: string): BridgeState & BridgeAc
   // Connect on mount (available events come via WS 'connected' message)
   useEffect(() => {
     mountedRef.current = true;
+
+    // Hydrate selectedEventId from localStorage post-mount (SSR-safe)
+    if (!selectedEventIdRef.current) {
+      const stored = readStoredEventId();
+      if (stored) {
+        setSelectedEventId(stored);
+        selectedEventIdRef.current = stored;
+      }
+    }
+
     connect();
     return () => {
       mountedRef.current = false;
       closeSocket();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync selectedEventId across windows via localStorage 'storage' events
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key !== SELECTED_EVENT_STORAGE_KEY) return;
+      const newEventId = e.newValue;
+      if (newEventId && newEventId !== selectedEventIdRef.current) {
+        setSelectedEventId(newEventId);
+        selectedEventIdRef.current = newEventId;
+        setPositions([]);
+        setRaceState(null);
+        setCompetitors([]);
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({ type: 'subscribe', eventId: newEventId }));
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   return {
     connectionState,

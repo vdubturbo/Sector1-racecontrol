@@ -11,12 +11,16 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTrackData } from '@/hooks/useTrackData';
 import { useBroadcastChannel } from '@/hooks/useBroadcastChannel';
 import { usePanelManager } from '@/hooks/usePanelManager';
+import { useWeather } from '@/hooks/useWeather';
+import { useControlLog } from '@/hooks/useControlLog';
 import { PANELS } from '@/lib/constants';
 
 export default function CommandHub() {
   const bridge = useBridgeSocket();
   const auth = useAuth();
   const track = useTrackData(bridge.selectedEventId);
+  const { weather } = useWeather(track.coordinates, track.startFinish?.index);
+  const controlLog = useControlLog(bridge.selectedEventId);
   const { panelStatuses, openPanel } = usePanelManager();
 
   const { broadcast } = useBroadcastChannel({
@@ -44,6 +48,8 @@ export default function CommandHub() {
       <TopStatusBar
         eventName={eventName}
         sessionType="race"
+        ambientTemp={weather?.ambientTemp}
+        trackTemp={weather?.trackTemp}
       >
         <UserMenu
           user={auth.user}
@@ -90,6 +96,7 @@ export default function CommandHub() {
       <main className="flex-1 overflow-auto pt-2">
         {bridge.selectedEventId ? (
           <div className="flex flex-col items-center gap-3 px-6">
+            <RaceLog entries={controlLog.entries} className="w-full max-w-5xl" />
             <TrackMap
               coordinates={track.coordinates}
               corners={track.corners}
@@ -99,7 +106,6 @@ export default function CommandHub() {
               error={track.error}
               className="w-full max-w-4xl"
             />
-            <RaceLog className="w-full max-w-5xl" />
           </div>
         ) : bridge.availableEvents.length > 0 ? (
           <div className="flex flex-col items-center gap-4">

@@ -180,7 +180,7 @@ interface RaceLogProps {
 }
 
 export function RaceLog({ entries, showUpdate = false, onUpdate, className = '' }: RaceLogProps) {
-  const data = entries ?? SAMPLE_ENTRIES;
+  const data = entries !== undefined ? entries : SAMPLE_ENTRIES;
   const [hoveredEntry, setHoveredEntry] = useState<string | null>(null);
 
   const { carCounts, driverCounts } = useMemo(
@@ -210,6 +210,13 @@ export function RaceLog({ entries, showUpdate = false, onUpdate, className = '' 
 
       {/* Entries */}
       <div className="max-h-[400px] overflow-y-auto">
+        {data.length === 0 && (
+          <div className="flex items-center justify-center py-12">
+            <span className="text-text-muted text-sm font-[var(--font-mono)]">
+              No control log entries
+            </span>
+          </div>
+        )}
         {data.map((entry) => {
           const action = ACTION_STYLES[entry.action];
           const isHovered = hoveredEntry === entry.id;
@@ -282,11 +289,15 @@ export function RaceLog({ entries, showUpdate = false, onUpdate, className = '' 
                   <span className="font-data text-sm font-bold text-accent-orange w-14 shrink-0">
                     #{car.carNumber}
                   </span>
-                  <img
-                    src={`/assets/manufacturer-logos/${car.manufacturer}.png`}
-                    alt={car.manufacturer}
-                    className="h-5 w-5 object-contain shrink-0"
-                  />
+                  {car.manufacturer ? (
+                    <img
+                      src={`/assets/manufacturer-logos/${car.manufacturer}.png`}
+                      alt={car.manufacturer}
+                      className="h-5 w-5 object-contain shrink-0"
+                    />
+                  ) : (
+                    <div className="h-5 w-5 shrink-0" />
+                  )}
                   <span className="text-xs text-text-primary font-medium w-44 truncate shrink-0">
                     {car.teamName}
                   </span>

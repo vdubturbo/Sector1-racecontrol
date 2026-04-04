@@ -23,39 +23,6 @@ function getClassColor(carClass: string): string {
   return `hsl(${Math.abs(hash) % 360}, 60%, 55%)`;
 }
 
-function makeCar(overrides: Partial<NormalizedCarPosition>): NormalizedCarPosition {
-  return {
-    carNumber: '', overallPosition: 0, classPosition: 0, lastLapTime: '', bestTime: '',
-    totalTime: '', isInPit: false, isEnteredPit: false, isExitedPit: false, pitStopCount: 0,
-    trackFlag: 0, localFlag: 0, driverName: '', driverId: '', teamName: '', carClass: '',
-    latitude: null, longitude: null, lastLapCompleted: 0, overallGap: '', inClassGap: '',
-    overallDifference: '', inClassDifference: '', bestLap: 0, isBestTime: false,
-    currentStatus: '', impactWarning: false, penaltyLaps: 0, penaltyWarnings: 0, blackFlags: 0,
-    ...overrides,
-  };
-}
-
-const SAMPLE_POSITIONS: NormalizedCarPosition[] = [
-  // GTO
-  makeCar({ carNumber: '44', carClass: 'GTO', classPosition: 1, overallPosition: 1, driverName: 'M. Johnson', teamName: 'Apex Racing', bestTime: '2:04.312', lastLapCompleted: 87, inClassGap: '' }),
-  makeCar({ carNumber: '99', carClass: 'GTO', classPosition: 2, overallPosition: 3, driverName: 'T. Brooks', teamName: 'Gridline Racing', bestTime: '2:04.887', lastLapCompleted: 87, inClassGap: '+3.241' }),
-  makeCar({ carNumber: '77', carClass: 'GTO', classPosition: 3, overallPosition: 5, driverName: 'S. Patel', teamName: 'Blackthorn Racing', bestTime: '2:05.102', lastLapCompleted: 86, inClassGap: '+1 Lap' }),
-  makeCar({ carNumber: '88', carClass: 'GTO', classPosition: 4, overallPosition: 10, driverName: 'F. Mueller', teamName: 'Stealth Motorsport', bestTime: '2:05.780', lastLapCompleted: 85, inClassGap: '+2 Laps' }),
-  makeCar({ carNumber: '12', carClass: 'GTO', classPosition: 5, overallPosition: 12, driverName: 'C. Dubois', teamName: 'Alpine Endurance', bestTime: '2:06.011', lastLapCompleted: 85, inClassGap: '+2 Laps' }),
-  // GP1
-  makeCar({ carNumber: '7', carClass: 'GP1', classPosition: 1, overallPosition: 2, driverName: 'K. Tanaka', teamName: 'Vortex Motorsport', bestTime: '2:03.998', lastLapCompleted: 87, inClassGap: '' }),
-  makeCar({ carNumber: '21', carClass: 'GP1', classPosition: 2, overallPosition: 4, driverName: 'R. Chen', teamName: 'Summit Motorsport', bestTime: '2:04.551', lastLapCompleted: 87, inClassGap: '+8.102' }),
-  makeCar({ carNumber: '163', carClass: 'GP1', classPosition: 3, overallPosition: 7, driverName: 'J. Novak', teamName: 'Redline Endurance', bestTime: '2:05.220', lastLapCompleted: 86, inClassGap: '+1 Lap' }),
-  makeCar({ carNumber: '33', carClass: 'GP1', classPosition: 4, overallPosition: 11, driverName: 'H. Kim', teamName: 'Zenith Racing', bestTime: '2:05.890', lastLapCompleted: 85, inClassGap: '+2 Laps' }),
-  makeCar({ carNumber: '56', carClass: 'GP1', classPosition: 5, overallPosition: 14, driverName: 'P. Santos', teamName: 'Meridian Motorsport', bestTime: '2:06.340', lastLapCompleted: 84, inClassGap: '+3 Laps' }),
-  // GP2
-  makeCar({ carNumber: '555', carClass: 'GP2', classPosition: 1, overallPosition: 6, driverName: 'L. Garcia', teamName: 'Thermal Racing Co.', bestTime: '2:06.410', lastLapCompleted: 85, inClassGap: '' }),
-  makeCar({ carNumber: '41', carClass: 'GP2', classPosition: 2, overallPosition: 8, driverName: 'A. Williams', teamName: 'Cobalt Motorsport', bestTime: '2:06.889', lastLapCompleted: 85, inClassGap: '+12.550' }),
-  makeCar({ carNumber: '130', carClass: 'GP2', classPosition: 3, overallPosition: 9, driverName: 'D. Alvarez', teamName: 'Iron Horse Racing', bestTime: '2:07.201', lastLapCompleted: 84, inClassGap: '+1 Lap' }),
-  makeCar({ carNumber: '90', carClass: 'GP2', classPosition: 4, overallPosition: 13, driverName: 'W. Torres', teamName: 'Drift Kings Racing', bestTime: '2:07.650', lastLapCompleted: 84, inClassGap: '+1 Lap' }),
-  makeCar({ carNumber: '644', carClass: 'GP2', classPosition: 5, overallPosition: 15, driverName: 'N. Petrov', teamName: 'Summit B Team', bestTime: '2:08.102', lastLapCompleted: 83, inClassGap: '+2 Laps' }),
-];
-
 const PODIUM_STYLES = [
   { label: '1ST', height: 'h-28', textSize: 'text-2xl', ring: 'ring-2 ring-[#ffd700]', accent: '#ffd700' },
   { label: '2ND', height: 'h-20', textSize: 'text-xl', ring: 'ring-2 ring-[#c0c0c0]', accent: '#c0c0c0' },
@@ -77,9 +44,8 @@ export default function ClassificationsPanel() {
 
   // Group positions by class, sorted by classPosition
   const classPodiums = useMemo(() => {
-    const source = bridge.positions.length > 0 ? bridge.positions : SAMPLE_POSITIONS;
     const byClass: Record<string, NormalizedCarPosition[]> = {};
-    for (const car of source) {
+    for (const car of bridge.positions) {
       const cls = car.carClass || 'Unknown';
       if (!byClass[cls]) byClass[cls] = [];
       byClass[cls].push(car);
