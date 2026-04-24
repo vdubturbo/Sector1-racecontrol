@@ -37,4 +37,11 @@ export interface QuadViewDescriptor {
    * percentage-height children.
    */
   autoFit?: boolean;
+  /**
+   * Render the view inside a vertically-scrollable container instead of
+   * QuadAutoFit. Use this when the view can grow long (many rows) and you'd
+   * rather keep text at a readable size and let the user scroll than shrink
+   * everything. Takes precedence over autoFit when both are set.
+   */
+  scrollable?: boolean;
 }

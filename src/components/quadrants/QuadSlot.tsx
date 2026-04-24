@@ -104,7 +104,15 @@ export function QuadSlot({
       <div className="flex-1 min-h-0 overflow-hidden">
         <QuadErrorBoundary slotLabel={slotLabel}>
           {descriptor ? (
-            descriptor.autoFit === false ? (
+            descriptor.scrollable ? (
+              <div className="h-full w-full overflow-y-auto">
+                <descriptor.component
+                  eventId={eventId}
+                  settings={config.settings}
+                  onSettingsChange={onSettingsChange}
+                />
+              </div>
+            ) : descriptor.autoFit === false ? (
               <div className="h-full w-full">
                 <descriptor.component
                   eventId={eventId}

@@ -43,6 +43,7 @@ export const QUAD_VIEWS: QuadViewDescriptor[] = [
     category: 'timing',
     component: DriversView,
     requiresEvent: true,
+    scrollable: true,
   },
   {
     id: 'pit-road',
@@ -51,5 +52,6 @@ export const QUAD_VIEWS: QuadViewDescriptor[] = [
     category: 'strategy',
     component: PitRoadView,
     requiresEvent: true,
+    scrollable: true,
   },
 ];
