@@ -1,20 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useBridgeSocket } from '@/hooks/useBridgeSocket';
 import { useActivePitStops } from '@/hooks/useActivePitStops';
 import { useSessionDrivers } from '@/hooks/useSessionDrivers';
 import { useQuadContext } from '../QuadContext';
 import type { QuadViewProps } from '../types';
 
-type Source = 'db' | 'local' | 'none';
-
 type PitRow = {
   carNumber: string;
   teamName: string;
   driverName: string;
   elapsedMs: number;
-  source: Source;
 };
 
 function formatDuration(ms: number): string {
@@ -28,10 +25,21 @@ function formatDuration(ms: number): string {
 export function PitRoadView(_props: QuadViewProps) {
   const bridge = useBridgeSocket();
   const { sessionUuid, userId } = useQuadContext();
-  const { pitStops } = useActivePitStops(sessionUuid, userId);
+  const { pitStops, isLoading, error } = useActivePitStops(sessionUuid, userId);
   const { drivers: sessionDrivers } = useSessionDrivers(sessionUuid, userId);
 
-  // Driver name per car (primary only).
+  // Team name enrichment is the one thing we still pull from the live feed:
+  // the bridge already knows each car's team name. The DB would require
+  // another join, and bridge-derived team names are fine for display.
+  const teamByCar = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const pos of bridge.positions) {
+      if (pos.carNumber && pos.teamName) map.set(pos.carNumber, pos.teamName);
+    }
+    return map;
+  }, [bridge.positions]);
+
+  // Driver name per car — primary driver from session_drivers.
   const driverByCar = useMemo(() => {
     const map = new Map<string, string>();
     for (const sd of sessionDrivers) {
@@ -42,37 +50,9 @@ export function PitRoadView(_props: QuadViewProps) {
     return map;
   }, [sessionDrivers]);
 
-  // DB-backed pit_in_time per car.
-  const pitInByCar = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const stop of pitStops) {
-      if (!stop.carNumber) continue;
-      const ts = Date.parse(stop.pitInTime);
-      if (!Number.isNaN(ts)) map.set(stop.carNumber, ts);
-    }
-    return map;
-  }, [pitStops]);
-
-  // Client-side fallback: note when isInPit first flipped to true for a car.
-  // Clear when the car leaves pit.
-  const localPitInRef = useRef<Map<string, number>>(new Map());
-  useEffect(() => {
-    const now = Date.now();
-    const map = localPitInRef.current;
-    const currentCars = new Set<string>();
-    for (const pos of bridge.positions) {
-      if (pos.isInPit && pos.carNumber) {
-        currentCars.add(pos.carNumber);
-        if (!map.has(pos.carNumber)) map.set(pos.carNumber, now);
-      }
-    }
-    // Drop cars no longer in pit so next entry starts a fresh timer.
-    for (const car of Array.from(map.keys())) {
-      if (!currentCars.has(car)) map.delete(car);
-    }
-  }, [bridge.positions]);
-
-  // Re-render every second so timers advance between bridge messages.
+  // Re-render every second so the elapsed timer ticks between realtime
+  // events. pit_stops changes come in via supabase subscription; the tick is
+  // purely for the running clock.
   const [, setTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 1000);
@@ -80,22 +60,47 @@ export function PitRoadView(_props: QuadViewProps) {
   }, []);
 
   const now = Date.now();
-  const rows: PitRow[] = bridge.positions
-    .filter((pos) => pos.isInPit)
-    .map((pos): PitRow => {
-      const dbStart = pitInByCar.get(pos.carNumber);
-      const localStart = localPitInRef.current.get(pos.carNumber);
-      const start = dbStart ?? localStart;
-      const source: Source = dbStart ? 'db' : localStart ? 'local' : 'none';
+  // Dedupe by car number, keeping the most recent pit_in_time. The bridge
+  // currently never writes pit_out_time, so a single car can accumulate
+  // multiple "open" rows across the session. Showing the newest is the
+  // closest we can get to "current stop" until that write path is fixed.
+  const latestByCar = new Map<string, typeof pitStops[number]>();
+  for (const stop of pitStops) {
+    if (!stop.carNumber) continue;
+    const existing = latestByCar.get(stop.carNumber);
+    if (!existing || Date.parse(stop.pitInTime) > Date.parse(existing.pitInTime)) {
+      latestByCar.set(stop.carNumber, stop);
+    }
+  }
+
+  const rows: PitRow[] = Array.from(latestByCar.values())
+    .map((stop) => {
+      const ts = Date.parse(stop.pitInTime);
+      const elapsedMs = Number.isFinite(ts) ? now - ts : 0;
       return {
-        carNumber: pos.carNumber,
-        teamName: pos.teamName,
-        driverName: driverByCar.get(pos.carNumber) || pos.driverName || '',
-        elapsedMs: start ? now - start : 0,
-        source,
+        carNumber: stop.carNumber,
+        teamName: teamByCar.get(stop.carNumber) || '',
+        driverName: driverByCar.get(stop.carNumber) || '',
+        elapsedMs,
       };
     })
     .sort((a, b) => b.elapsedMs - a.elapsedMs);
+
+  if (error) {
+    return (
+      <div className="h-full flex items-center justify-center text-status-red text-xs px-3 text-center">
+        {error}
+      </div>
+    );
+  }
+
+  if (isLoading && rows.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center text-text-muted text-xs">
+        Loading…
+      </div>
+    );
+  }
 
   if (rows.length === 0) {
     return (
@@ -130,23 +135,8 @@ export function PitRoadView(_props: QuadViewProps) {
                 {row.driverName || '—'}
               </div>
             </div>
-            <span
-              className={`font-data text-base tabular-nums text-right ${
-                row.source === 'db'
-                  ? 'text-accent-orange'
-                  : row.source === 'local'
-                  ? 'text-text-muted'
-                  : 'text-text-muted/40'
-              }`}
-              title={
-                row.source === 'db'
-                  ? 'Pit entry time from pit_stops (DB)'
-                  : row.source === 'local'
-                  ? 'Pit entry tracked client-side this session'
-                  : 'No pit entry time available'
-              }
-            >
-              {row.source === 'none' ? '—' : formatDuration(row.elapsedMs)}
+            <span className="font-data text-base text-accent-orange tabular-nums text-right">
+              {formatDuration(row.elapsedMs)}
             </span>
           </div>
         ))}

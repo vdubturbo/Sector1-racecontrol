@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { TopStatusBar } from '@/components/layout/TopStatusBar';
 import { PanelLauncher } from '@/components/panels/PanelLauncher';
 import { UserMenu } from '@/components/ui/UserMenu';
+import { SignInGate } from '@/components/auth/SignInGate';
 import { useBridgeSocket } from '@/hooks/useBridgeSocket';
 import { useAuth } from '@/hooks/useAuth';
 import { useTrackData } from '@/hooks/useTrackData';
@@ -50,6 +51,19 @@ export default function CommandHub() {
   const handleChangeEvent = () => {
     bridge.clearEvent();
   };
+
+  // Auth wall: race control is gated behind sign-in. Everything from the
+  // TopStatusBar down requires an authenticated user.
+  if (auth.isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-bg-primary">
+        <span className="section-header text-text-muted animate-pulse">Loading…</span>
+      </div>
+    );
+  }
+  if (!auth.user) {
+    return <SignInGate onSignIn={auth.signIn} />;
+  }
 
   return (
     <div className="flex flex-col h-screen">
