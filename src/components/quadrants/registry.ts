@@ -1,5 +1,6 @@
 import type { QuadViewDescriptor } from './types';
 import { LeadersView } from './views/LeadersView';
+import { RaceLogSummaryView } from './views/RaceLogSummaryView';
 
 /**
  * Registry of views that can appear in a quadrant slot.
@@ -13,6 +14,14 @@ export const QUAD_VIEWS: QuadViewDescriptor[] = [
     icon: '🏆',
     category: 'timing',
     component: LeadersView,
+    requiresEvent: true,
+  },
+  {
+    id: 'race-log-summary',
+    label: 'Race Control Log',
+    icon: '📋',
+    category: 'incidents',
+    component: RaceLogSummaryView,
     requiresEvent: true,
   },
 ];
