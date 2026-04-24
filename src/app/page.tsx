@@ -2,8 +2,6 @@
 
 import { useEffect } from 'react';
 import { TopStatusBar } from '@/components/layout/TopStatusBar';
-import { TrackMap } from '@/components/TrackMap';
-import { RaceLog } from '@/components/RaceLog';
 import { PanelLauncher } from '@/components/panels/PanelLauncher';
 import { UserMenu } from '@/components/ui/UserMenu';
 import { useBridgeSocket } from '@/hooks/useBridgeSocket';
@@ -12,7 +10,6 @@ import { useTrackData } from '@/hooks/useTrackData';
 import { useBroadcastChannel } from '@/hooks/useBroadcastChannel';
 import { usePanelManager } from '@/hooks/usePanelManager';
 import { useWeather } from '@/hooks/useWeather';
-import { useControlLog } from '@/hooks/useControlLog';
 import { PANELS } from '@/lib/constants';
 
 export default function CommandHub() {
@@ -20,7 +17,6 @@ export default function CommandHub() {
   const auth = useAuth();
   const track = useTrackData(bridge.selectedEventId);
   const { weather } = useWeather(track.coordinates, track.startFinish?.index);
-  const controlLog = useControlLog(bridge.selectedEventId);
   const { panelStatuses, openPanel } = usePanelManager();
 
   const { broadcast } = useBroadcastChannel({
@@ -43,6 +39,11 @@ export default function CommandHub() {
     (e) => e.eventId === bridge.selectedEventId
   )?.name ?? bridge.selectedEventId ?? 'No Event Selected';
 
+  // Note: localStorage 'storage' event auto-syncs popouts via useBridgeSocket
+  const handleChangeEvent = () => {
+    bridge.clearEvent();
+  };
+
   return (
     <div className="flex flex-col h-screen">
       <TopStatusBar
@@ -56,6 +57,7 @@ export default function CommandHub() {
           isLoading={auth.isLoading}
           onSignIn={auth.signIn}
           onSignOut={auth.signOut}
+          onChangeEvent={bridge.selectedEventId ? handleChangeEvent : undefined}
         />
       </TopStatusBar>
 
@@ -90,22 +92,21 @@ export default function CommandHub() {
             })()}
           </span>
         </div>
+
       </div>
 
       {/* Main content area */}
-      <main className="flex-1 overflow-auto pt-2">
+      <main className="flex-1 overflow-hidden pt-2">
         {bridge.selectedEventId ? (
-          <div className="flex flex-col items-center gap-3 px-6">
-            <RaceLog entries={controlLog.entries} className="w-full max-w-5xl" />
-            <TrackMap
-              coordinates={track.coordinates}
-              corners={track.corners}
-              startFinish={track.startFinish}
-              rotation={track.rotation}
-              isLoading={track.isLoading}
-              error={track.error}
-              className="w-full max-w-4xl"
-            />
+          <div className="h-full grid grid-cols-2 grid-rows-2 gap-3 px-4 pb-3">
+            {(['TOP LEFT', 'TOP RIGHT', 'BOTTOM LEFT', 'BOTTOM RIGHT'] as const).map((label) => (
+              <section
+                key={label}
+                className="flex items-center justify-center bg-bg-card border-2 border-[#999999] rounded-lg min-h-0"
+              >
+                <span className="section-header text-text-muted">{label}</span>
+              </section>
+            ))}
           </div>
         ) : bridge.availableEvents.length > 0 ? (
           <div className="flex flex-col items-center gap-4">

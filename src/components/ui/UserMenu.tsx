@@ -8,9 +8,11 @@ interface UserMenuProps {
   isLoading: boolean;
   onSignIn: (email: string, password: string) => Promise<string | null>;
   onSignOut: () => Promise<void>;
+  /** Optional handler for the Change Event menu item. Item is only rendered when provided. */
+  onChangeEvent?: () => void;
 }
 
-export function UserMenu({ user, isLoading, onSignIn, onSignOut }: UserMenuProps) {
+export function UserMenu({ user, isLoading, onSignIn, onSignOut, onChangeEvent }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [email, setEmail] = useState('');
@@ -94,6 +96,13 @@ export function UserMenu({ user, isLoading, onSignIn, onSignOut }: UserMenuProps
 
               {/* Menu items */}
               <div className="py-1">
+                {onChangeEvent && (
+                  <MenuItem
+                    icon="🔁"
+                    label="Change Event"
+                    onClick={() => { setIsOpen(false); onChangeEvent(); }}
+                  />
+                )}
                 <MenuItem icon="✏️" label="Edit Profile" onClick={() => setIsOpen(false)} />
                 <MenuItem icon="📧" label="Contact Sector1" onClick={() => { setIsOpen(false); window.open('mailto:support@sector1.ai', '_blank'); }} />
                 <div className="my-1 border-t border-border-default" />
