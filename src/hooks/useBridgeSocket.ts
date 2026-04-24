@@ -26,6 +26,7 @@ export interface BridgeState {
 
 export interface BridgeActions {
   selectEvent: (eventId: string) => void;
+  clearEvent: () => void;
   disconnect: () => void;
   reconnect: () => void;
 }
@@ -191,27 +192,52 @@ export function useBridgeSocket(initialEventId?: string): BridgeState & BridgeAc
         case 'events_success': {
           const rawEvents: unknown[] = ((data as unknown as Record<string, unknown>).events || []) as unknown[];
           if (rawEvents.length > 0) {
-            const normalized = rawEvents.map((evt: unknown) => {
-              const e = evt as Record<string, unknown>;
-              if (typeof evt === 'string') {
-                return { eventId: evt, name: evt };
-              }
-              return {
-                eventId: String(e.eid ?? e.EventID ?? e.eventId ?? ''),
-                name: String(e.en ?? e.EventName ?? e.name ?? 'Unnamed Event'),
-              };
-            });
-            setAvailableEvents(normalized.filter((e) => e.eventId));
+            const normalized = rawEvents
+              .map((evt: unknown) => {
+                const e = evt as Record<string, unknown>;
+                if (typeof evt === 'string') {
+                  return { eventId: evt, name: evt };
+                }
+                return {
+                  eventId: String(e.eid ?? e.EventID ?? e.eventId ?? ''),
+                  name: String(e.en ?? e.EventName ?? e.name ?? 'Unnamed Event'),
+                };
+              })
+              .filter((e) => e.eventId);
+            setAvailableEvents(normalized);
+
+            // Validate the currently-selected event against the fresh list.
+            // If it no longer exists, clear state + localStorage so the selector reappears.
+            const currentId = selectedEventIdRef.current;
+            if (currentId && !normalized.some((e) => e.eventId === currentId)) {
+              setSelectedEventId(null);
+              selectedEventIdRef.current = null;
+              writeStoredEventId(null);
+              setPositions([]);
+              setRaceState(null);
+              setCompetitors([]);
+            }
           }
           break;
         }
 
         case 'positions':
-        case 'position_update':
+        case 'position_update': {
+          // Guard against late messages from a previous subscription arriving after
+          // the client switched events — only accept if eventId matches or is absent.
+          const incomingEventId = (data as { eventId?: string }).eventId;
+          if (
+            incomingEventId &&
+            selectedEventIdRef.current &&
+            incomingEventId !== selectedEventIdRef.current
+          ) {
+            break;
+          }
           setPositions(
             (data.positions || []).map((p) => normalizePosition(p as unknown as Record<string, unknown>))
           );
           break;
+        }
 
         case 'flag_state':
           if (data.raceState) {
@@ -293,6 +319,7 @@ export function useBridgeSocket(initialEventId?: string): BridgeState & BridgeAc
 
   const selectEvent = useCallback((eventId: string) => {
     setSelectedEventId(eventId);
+    selectedEventIdRef.current = eventId;
     writeStoredEventId(eventId);
     setPositions([]);
     setRaceState(null);
@@ -300,6 +327,21 @@ export function useBridgeSocket(initialEventId?: string): BridgeState & BridgeAc
 
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: 'subscribe', eventId }));
+      // Refresh the events list so the caller sees a current snapshot
+      wsRef.current.send(JSON.stringify({ type: 'getEvents' }));
+    }
+  }, []);
+
+  const clearEvent = useCallback(() => {
+    setSelectedEventId(null);
+    selectedEventIdRef.current = null;
+    writeStoredEventId(null);
+    setPositions([]);
+    setRaceState(null);
+    setCompetitors([]);
+    // Request a fresh events list so the selector reflects current bridge state
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'getEvents' }));
     }
   }, []);
 
@@ -330,6 +372,21 @@ export function useBridgeSocket(initialEventId?: string): BridgeState & BridgeAc
     const handleStorage = (e: StorageEvent) => {
       if (e.key !== SELECTED_EVENT_STORAGE_KEY) return;
       const newEventId = e.newValue;
+
+      // Remote clear — mirror the clearEvent behavior locally
+      if (!newEventId && selectedEventIdRef.current) {
+        setSelectedEventId(null);
+        selectedEventIdRef.current = null;
+        setPositions([]);
+        setRaceState(null);
+        setCompetitors([]);
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({ type: 'getEvents' }));
+        }
+        return;
+      }
+
+      // Remote switch — subscribe to the new event
       if (newEventId && newEventId !== selectedEventIdRef.current) {
         setSelectedEventId(newEventId);
         selectedEventIdRef.current = newEventId;
@@ -356,6 +413,7 @@ export function useBridgeSocket(initialEventId?: string): BridgeState & BridgeAc
     lastUpdate,
     error,
     selectEvent,
+    clearEvent,
     disconnect,
     reconnect,
   };

@@ -18,6 +18,9 @@ import { QuadProvider } from '@/components/quadrants/QuadContext';
 import { QUAD_VIEWS } from '@/components/quadrants/registry';
 import { PANELS } from '@/lib/constants';
 
+/** Only these roles may access the race control module. */
+const ALLOWED_ROLES: ReadonlySet<string> = new Set(['admin', 'race_control']);
+
 export default function CommandHub() {
   const bridge = useBridgeSocket();
   const auth = useAuth();
@@ -63,6 +66,24 @@ export default function CommandHub() {
   }
   if (!auth.user) {
     return <SignInGate onSignIn={auth.signIn} />;
+  }
+  if (!ALLOWED_ROLES.has(auth.user.role)) {
+    return (
+      <div className="flex flex-col h-screen items-center justify-center bg-bg-primary px-4">
+        <div className="w-full max-w-sm p-8 bg-bg-card border-2 border-status-red/50 rounded-lg text-center">
+          <h1 className="text-lg font-semibold text-status-red mb-2">Access Denied</h1>
+          <p className="text-xs text-text-muted mb-6">
+            Your role (<span className="text-text-primary font-semibold">{auth.user.role}</span>) is not permitted to access race control.
+          </p>
+          <button
+            onClick={auth.signOut}
+            className="px-4 py-2 bg-accent-orange text-white text-sm font-semibold rounded hover:bg-accent-amber transition-colors"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
