@@ -1,4 +1,5 @@
 import type { QuadViewDescriptor } from './types';
+import { LeadersView } from './views/LeadersView';
 
 /**
  * Registry of views that can appear in a quadrant slot.
@@ -6,5 +7,12 @@ import type { QuadViewDescriptor } from './types';
  * and it becomes selectable in every slot.
  */
 export const QUAD_VIEWS: QuadViewDescriptor[] = [
-  // Views will be added as we port popouts and build new quadrant-native views.
+  {
+    id: 'leaders',
+    label: 'Leaders',
+    icon: '🏆',
+    category: 'timing',
+    component: LeadersView,
+    requiresEvent: true,
+  },
 ];

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import type { QuadSlotConfig, QuadViewDescriptor } from './types';
 import { QuadErrorBoundary } from './ErrorBoundary';
+import { QuadAutoFit } from './QuadAutoFit';
 
 interface Props {
   slotLabel: string;
@@ -103,11 +104,13 @@ export function QuadSlot({
       <div className="flex-1 min-h-0 overflow-hidden">
         <QuadErrorBoundary slotLabel={slotLabel}>
           {descriptor ? (
-            <descriptor.component
-              eventId={eventId}
-              settings={config.settings}
-              onSettingsChange={onSettingsChange}
-            />
+            <QuadAutoFit>
+              <descriptor.component
+                eventId={eventId}
+                settings={config.settings}
+                onSettingsChange={onSettingsChange}
+              />
+            </QuadAutoFit>
           ) : (
             <div className="h-full flex items-center justify-center text-text-muted text-xs">
               Please Select View
