@@ -1,4 +1,5 @@
 import type { QuadViewDescriptor } from './types';
+import { DriversView } from './views/DriversView';
 import { LeadersView } from './views/LeadersView';
 import { RaceLogSummaryView } from './views/RaceLogSummaryView';
 import { TrackMapView } from './views/TrackMapView';
@@ -33,5 +34,13 @@ export const QUAD_VIEWS: QuadViewDescriptor[] = [
     component: TrackMapView,
     requiresEvent: true,
     autoFit: false,
+  },
+  {
+    id: 'drivers',
+    label: 'Drivers',
+    icon: '🧑‍✈️',
+    category: 'timing',
+    component: DriversView,
+    requiresEvent: true,
   },
 ];
