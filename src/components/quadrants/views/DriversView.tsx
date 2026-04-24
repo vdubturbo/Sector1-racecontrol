@@ -97,7 +97,7 @@ export function DriversView(_props: QuadViewProps) {
 
   return (
     <div className="flex flex-col">
-      <div className="grid grid-cols-[3.5rem_1fr_auto_auto] gap-3 px-3 py-1.5 border-b border-border-default bg-bg-surface text-[0.625rem] uppercase tracking-wider text-text-secondary font-semibold">
+      <div className="grid grid-cols-[3.5rem_1fr_auto_auto] gap-3 px-3 py-1.5 border-b border-border-default bg-bg-surface text-xs uppercase tracking-wider text-text-secondary font-semibold">
         <span>Car</span>
         <span>Team / Driver</span>
         <span className="text-right">Laps</span>
@@ -108,7 +108,7 @@ export function DriversView(_props: QuadViewProps) {
         {rows.map((row) => (
           <div
             key={row.carNumber}
-            className="grid grid-cols-[3.5rem_1fr_auto_auto] gap-3 px-3 py-1.5 items-center"
+            className="grid grid-cols-[3.5rem_1fr_auto_auto] gap-3 px-3 py-2 items-center"
           >
             <div className="flex items-center gap-1.5">
               <span className="font-data text-base font-bold text-accent-orange">
@@ -128,11 +128,11 @@ export function DriversView(_props: QuadViewProps) {
                 {row.driverName}
               </div>
             </div>
-            <span className="font-data text-sm text-text-primary tabular-nums text-right">
+            <span className="font-data text-base text-text-primary tabular-nums text-right">
               {row.laps}
             </span>
             <span
-              className={`font-data text-sm tabular-nums text-right ${
+              className={`font-data text-base tabular-nums text-right ${
                 row.inCarSource === 'db'
                   ? 'text-accent-orange'
                   : row.inCarSource === 'local'
