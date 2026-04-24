@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useBridgeSocket } from '@/hooks/useBridgeSocket';
+import { useSessionDrivers } from '@/hooks/useSessionDrivers';
+import { useQuadContext } from '../QuadContext';
 import type { QuadViewProps } from '../types';
 
 type StintStart = { driverName: string; since: number };
@@ -17,16 +19,28 @@ function formatDuration(ms: number): string {
 
 export function DriversView(_props: QuadViewProps) {
   const bridge = useBridgeSocket();
+  const { sessionUuid, userId } = useQuadContext();
+  const { drivers: sessionDrivers } = useSessionDrivers(sessionUuid, userId);
 
-  // Per-car stint tracking, keyed by car number. When the driver name for a
-  // given car changes (or appears for the first time this session), we reset
-  // `since` to now. This gives us "time in current stint" — the cleanest live
-  // proxy for "time in car" without a DB-backed stint log.
-  const stintStartsRef = useRef<Map<string, StintStart>>(new Map());
+  // Authoritative stint start by car number, sourced from session_drivers
+  // (is_primary row per car).
+  const stintStartByCar = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const sd of sessionDrivers) {
+      if (sd.isPrimary && sd.carNumber && sd.stintStartTime) {
+        const ts = Date.parse(sd.stintStartTime);
+        if (!Number.isNaN(ts)) map.set(sd.carNumber, ts);
+      }
+    }
+    return map;
+  }, [sessionDrivers]);
 
+  // Fallback: if the DB doesn't have a stint start for a car yet, track it
+  // client-side so the timer still starts *something*. Reset on driver change.
+  const fallbackRef = useRef<Map<string, StintStart>>(new Map());
   useEffect(() => {
     const now = Date.now();
-    const starts = stintStartsRef.current;
+    const starts = fallbackRef.current;
     for (const pos of bridge.positions) {
       if (!pos.driverName) continue;
       const existing = starts.get(pos.carNumber);
@@ -36,8 +50,8 @@ export function DriversView(_props: QuadViewProps) {
     }
   }, [bridge.positions]);
 
-  // Force a re-render every second so the elapsed timer advances even when no
-  // new bridge messages arrive.
+  // Re-render every second so the elapsed timer advances between bridge
+  // messages.
   const [, setTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 1000);
@@ -48,14 +62,21 @@ export function DriversView(_props: QuadViewProps) {
   const rows = bridge.positions
     .filter((pos) => pos.driverName)
     .map((pos) => {
-      const start = stintStartsRef.current.get(pos.carNumber);
-      const elapsedMs = start?.driverName === pos.driverName ? now - start.since : 0;
+      const dbStart = stintStartByCar.get(pos.carNumber);
+      const fallback = fallbackRef.current.get(pos.carNumber);
+      const fallbackStart =
+        fallback?.driverName === pos.driverName ? fallback.since : undefined;
+
+      const stintStart = dbStart ?? fallbackStart;
+      const elapsedMs = stintStart ? now - stintStart : 0;
+
       return {
         carNumber: pos.carNumber,
         teamName: pos.teamName,
         driverName: pos.driverName,
         laps: pos.lastLapCompleted,
         elapsedMs,
+        inCarSource: dbStart ? ('db' as const) : fallbackStart ? ('local' as const) : ('none' as const),
         isInPit: pos.isInPit,
       };
     })
@@ -76,7 +97,6 @@ export function DriversView(_props: QuadViewProps) {
 
   return (
     <div className="flex flex-col">
-      {/* Column headers */}
       <div className="grid grid-cols-[3.5rem_1fr_auto_auto] gap-3 px-3 py-1.5 border-b border-border-default bg-bg-surface text-[0.625rem] uppercase tracking-wider text-text-secondary font-semibold">
         <span>Car</span>
         <span>Team / Driver</span>
@@ -111,8 +131,23 @@ export function DriversView(_props: QuadViewProps) {
             <span className="font-data text-sm text-text-primary tabular-nums text-right">
               {row.laps}
             </span>
-            <span className="font-data text-sm text-accent-orange tabular-nums text-right">
-              {formatDuration(row.elapsedMs)}
+            <span
+              className={`font-data text-sm tabular-nums text-right ${
+                row.inCarSource === 'db'
+                  ? 'text-accent-orange'
+                  : row.inCarSource === 'local'
+                  ? 'text-text-muted'
+                  : 'text-text-muted/40'
+              }`}
+              title={
+                row.inCarSource === 'db'
+                  ? 'Stint start from session_drivers (DB)'
+                  : row.inCarSource === 'local'
+                  ? 'Stint start tracked client-side this session — open view before the race for accurate time'
+                  : 'No stint start available'
+              }
+            >
+              {row.inCarSource === 'none' ? '—' : formatDuration(row.elapsedMs)}
             </span>
           </div>
         ))}

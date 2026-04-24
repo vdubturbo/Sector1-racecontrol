@@ -11,7 +11,9 @@ import { useBroadcastChannel } from '@/hooks/useBroadcastChannel';
 import { usePanelManager } from '@/hooks/usePanelManager';
 import { useWeather } from '@/hooks/useWeather';
 import { useQuadLayout } from '@/hooks/useQuadLayout';
+import { useActiveSession } from '@/hooks/useActiveSession';
 import { QuadView } from '@/components/quadrants/QuadView';
+import { QuadProvider } from '@/components/quadrants/QuadContext';
 import { QUAD_VIEWS } from '@/components/quadrants/registry';
 import { PANELS } from '@/lib/constants';
 
@@ -22,6 +24,7 @@ export default function CommandHub() {
   const { weather } = useWeather(track.coordinates, track.startFinish?.index);
   const { panelStatuses, openPanel } = usePanelManager();
   const quad = useQuadLayout(auth.user?.id ?? null);
+  const activeSession = useActiveSession(bridge.selectedEventId, auth.user?.id ?? null);
 
   const { broadcast } = useBroadcastChannel({
     onEventSelected: (msg) => {
@@ -102,13 +105,22 @@ export default function CommandHub() {
       {/* Main content area */}
       <main className="flex-1 overflow-hidden pt-2">
         {bridge.selectedEventId ? (
-          <QuadView
-            layout={quad.layout}
-            views={QUAD_VIEWS}
-            eventId={bridge.selectedEventId}
-            onSlotViewChange={quad.setSlotView}
-            onSlotSettingsChange={quad.setSlotSettings}
-          />
+          <QuadProvider
+            value={{
+              redmistEventId: bridge.selectedEventId,
+              eventUuid: activeSession.session?.eventUuid ?? null,
+              sessionUuid: activeSession.session?.sessionUuid ?? null,
+              userId: auth.user?.id ?? null,
+            }}
+          >
+            <QuadView
+              layout={quad.layout}
+              views={QUAD_VIEWS}
+              eventId={bridge.selectedEventId}
+              onSlotViewChange={quad.setSlotView}
+              onSlotSettingsChange={quad.setSlotSettings}
+            />
+          </QuadProvider>
         ) : bridge.availableEvents.length > 0 ? (
           <div className="flex flex-col items-center gap-4">
             <span className="section-header">SELECT AN EVENT</span>

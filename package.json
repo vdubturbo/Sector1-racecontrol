@@ -6,7 +6,8 @@
     "dev": "next dev -p 3030",
     "build": "next build",
     "start": "next start -p 3030",
-    "lint": "next lint"
+    "lint": "next lint",
+    "gen:types": "npx -y supabase@latest gen types typescript --project-id mvfwyhqhynomdtzypkkx --schema public > src/lib/database.types.ts"
   },
   "repository": {
     "type": "git",

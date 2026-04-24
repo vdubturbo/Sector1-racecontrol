@@ -68,33 +68,23 @@ export function useTrackData(redmistEventId: string | null): TrackDataState {
         // store these as redmist_event_id or we match by name
         // Try multiple approaches:
 
-        // 1. Check if any racing_session references this redmist event ID
-        const { data: sessions } = await supabase
-          .from('racing_sessions')
-          .select('event_id, redmist_event_id')
+        // Match on racing_events.redmist_event_id (racing_sessions only has
+        // redmist_session_id, not event id — the earlier two-query fallback
+        // never returned anything and is removed).
+        const { data: events } = await supabase
+          .from('racing_events')
+          .select('event_id, track_id, redmist_event_id')
           .eq('redmist_event_id', redmistEventId)
           .limit(1);
 
         let eventId: string | null = null;
 
-        if (sessions && sessions.length > 0) {
-          eventId = sessions[0].event_id;
-        } else {
-          // 2. Try matching directly on racing_events
-          const { data: events } = await supabase
-            .from('racing_events')
-            .select('event_id, track_id, redmist_event_id')
-            .eq('redmist_event_id', redmistEventId)
-            .limit(1);
-
-          if (events && events.length > 0) {
-            eventId = events[0].event_id;
-            // If we already have track_id, skip the next lookup
-            if (events[0].track_id) {
-              setTrackId(events[0].track_id);
-              await fetchTrackData(events[0].track_id, cancelled, setCoordinates, setCorners, setStartFinish, setRotation, setError);
-              return;
-            }
+        if (events && events.length > 0) {
+          eventId = events[0].event_id;
+          if (events[0].track_id) {
+            setTrackId(events[0].track_id);
+            await fetchTrackData(events[0].track_id, cancelled, setCoordinates, setCorners, setStartFinish, setRotation, setError);
+            return;
           }
         }
 
@@ -190,7 +180,7 @@ async function fetchTrackData(
     return;
   }
 
-  const coords = trackData[0].coordinates as TrackCoordinate[];
+  const coords = trackData[0].coordinates as unknown as TrackCoordinate[];
   if (Array.isArray(coords) && coords.length > 0) {
     setCoordinates(coords);
   } else {
@@ -199,7 +189,7 @@ async function fetchTrackData(
   }
 
   // Extract corners and start/finish from reference_points
-  const refPoints = trackData[0].reference_points as {
+  const refPoints = trackData[0].reference_points as unknown as {
     corners?: TrackCorner[];
     start_finish?: TrackStartFinish;
   } | null;
