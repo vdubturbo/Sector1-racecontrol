@@ -1,6 +1,7 @@
 import type { QuadViewDescriptor } from './types';
 import { LeadersView } from './views/LeadersView';
 import { RaceLogSummaryView } from './views/RaceLogSummaryView';
+import { TrackMapView } from './views/TrackMapView';
 
 /**
  * Registry of views that can appear in a quadrant slot.
@@ -23,5 +24,14 @@ export const QUAD_VIEWS: QuadViewDescriptor[] = [
     category: 'incidents',
     component: RaceLogSummaryView,
     requiresEvent: true,
+  },
+  {
+    id: 'track-map',
+    label: 'Track Map',
+    icon: '🗺️',
+    category: 'other',
+    component: TrackMapView,
+    requiresEvent: true,
+    autoFit: false,
   },
 ];

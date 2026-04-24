@@ -30,4 +30,11 @@ export interface QuadViewDescriptor {
   component: ComponentType<QuadViewProps>;
   /** If true, the view is disabled in the picker when no event is selected. */
   requiresEvent?: boolean;
+  /**
+   * Opt out of the slot-level QuadAutoFit wrapper. Default true. Set false for
+   * views whose own layout scales itself (e.g. SVG maps, video iframes) — the
+   * density-based auto-fit is meant for text/table content and will collapse
+   * percentage-height children.
+   */
+  autoFit?: boolean;
 }
