@@ -108,7 +108,18 @@ export function useControlLog(
 
       if (!mountedRef.current) return;
 
-      setEntries(data.map((raw, i) => mapEntry(raw, i)));
+      // RedMist returns entries grouped by category (car-events, flags,
+      // conditions) rather than a single chronological stream — sort by
+      // sequence number desc, falling back to the raw ISO timestamp, so
+      // the newest entries surface at the top in both views.
+      const sorted = [...data].sort((a, b) => {
+        const orderA = typeof a.o === 'number' ? a.o : Number.NEGATIVE_INFINITY;
+        const orderB = typeof b.o === 'number' ? b.o : Number.NEGATIVE_INFINITY;
+        if (orderA !== orderB) return orderB - orderA;
+        return (b.t ?? '').localeCompare(a.t ?? '');
+      });
+
+      setEntries(sorted.map((raw, i) => mapEntry(raw, i)));
     } catch (err) {
       if (!mountedRef.current) return;
       setError(err instanceof Error ? err.message : 'Failed to fetch control log');

@@ -6,6 +6,8 @@ import type { QuadViewProps } from '../types';
 
 export function RaceLogSummaryView({ eventId }: QuadViewProps) {
   const controlLog = useControlLog(eventId);
+  // Entries arrive newest-first from the hook, so the natural top of the
+  // scroll container is already "most recent" — no auto-scroll needed.
 
   if (!eventId) {
     return (
