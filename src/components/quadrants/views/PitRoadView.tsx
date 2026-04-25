@@ -123,14 +123,18 @@ export function PitRoadView(_props: QuadViewProps) {
 
   if (rows.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center text-text-muted text-xs">
-        Pit lane clear
+      <div className="flex flex-col">
+        <CountBanner count={0} />
+        <div className="flex-1 flex items-center justify-center text-text-muted text-xs py-6">
+          Pit lane clear
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col">
+      <CountBanner count={rows.length} />
       <div className="grid grid-cols-[3.5rem_1fr_1fr_3rem_auto] gap-3 px-3 py-1.5 border-b border-border-default bg-bg-surface text-xs uppercase tracking-wider text-text-secondary font-semibold">
         <span>Car</span>
         <span>Team</span>
@@ -163,6 +167,19 @@ export function PitRoadView(_props: QuadViewProps) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function CountBanner({ count }: { count: number }) {
+  return (
+    <div className="flex items-center justify-center gap-2 px-3 py-1.5 bg-bg-surface border-b border-border-default">
+      <span className="font-data text-lg font-bold text-accent-orange tabular-nums leading-none">
+        {count}
+      </span>
+      <span className="text-[0.625rem] uppercase tracking-wider text-text-secondary font-semibold">
+        {count === 1 ? 'Car in Pit' : 'Cars in Pit'}
+      </span>
     </div>
   );
 }

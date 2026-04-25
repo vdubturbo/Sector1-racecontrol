@@ -16,7 +16,7 @@ import { useActiveSession } from '@/hooks/useActiveSession';
 import { QuadView } from '@/components/quadrants/QuadView';
 import { QuadProvider } from '@/components/quadrants/QuadContext';
 import { QUAD_VIEWS } from '@/components/quadrants/registry';
-import { PANELS } from '@/lib/constants';
+import { PANELS, FLAG_COLORS } from '@/lib/constants';
 
 /** Only these roles may access the race control module. */
 const ALLOWED_ROLES: ReadonlySet<string> = new Set(['admin', 'race_control']);
@@ -103,38 +103,46 @@ export default function CommandHub() {
         />
       </TopStatusBar>
 
-      {/* Metric Containers */}
-      <div className="flex justify-center items-center gap-4 py-3">
-        {/* Cars On Track */}
-        <div className="flex flex-col items-center px-6 py-2 bg-bg-card border-2 border-[#999999] rounded-lg">
-          <span className="section-header text-[0.5rem] mb-0.5">CARS ON TRACK</span>
-          <span className="font-data text-4xl font-bold text-status-green tracking-tight leading-none">
-            {bridge.positions.length - bridge.positions.filter((p) => p.isInPit).length}
-          </span>
-          <span className="text-[0.5rem] text-text-muted mt-0.5 font-[var(--font-mono)]">
-            of {bridge.positions.length}
-          </span>
-        </div>
+      {/* Metric Containers — wrapped in an outer panel whose fill reflects
+          the current race flag color. Inner cards keep their own dark
+          fill on top, so the flag color reads through the gaps. */}
+      <div className="flex justify-center py-3">
+        <div
+          className="flex items-center gap-4 px-3 py-3 border-2 border-[#999999] rounded-lg transition-colors duration-300"
+          style={{
+            backgroundColor: (FLAG_COLORS[bridge.raceState?.flagColor ?? 'unknown'] ?? FLAG_COLORS.unknown).bg,
+          }}
+        >
+          {/* Cars On Track */}
+          <div className="flex flex-col items-center px-6 py-2 bg-bg-card border-2 border-[#999999] rounded-lg">
+            <span className="section-header text-[0.5rem] mb-0.5">CARS ON TRACK</span>
+            <span className="font-data text-4xl font-bold text-status-green tracking-tight leading-none">
+              {bridge.positions.length - bridge.positions.filter((p) => p.isInPit).length}
+            </span>
+            <span className="text-[0.5rem] text-text-muted mt-0.5 font-[var(--font-mono)]">
+              of {bridge.positions.length}
+            </span>
+          </div>
 
-        {/* Remaining Time */}
-        <div className="flex flex-col items-center px-10 py-3 bg-bg-card border-2 border-[#999999] rounded-lg">
-          <span className="section-header text-[0.5625rem] mb-1">REMAINING</span>
-          <span className="font-data text-6xl font-bold text-accent-orange tracking-tight leading-none">
-            {bridge.raceState?.timeRemaining ?? '—:——:——'}
-          </span>
-        </div>
+          {/* Remaining Time */}
+          <div className="flex flex-col items-center px-10 py-3 bg-bg-card border-2 border-[#999999] rounded-lg">
+            <span className="section-header text-[0.5625rem] mb-1">REMAINING</span>
+            <span className="font-data text-6xl font-bold text-accent-orange tracking-tight leading-none">
+              {bridge.raceState?.timeRemaining ?? '—:——:——'}
+            </span>
+          </div>
 
-        {/* Leader Lap */}
-        <div className="flex flex-col items-center px-6 py-2 bg-bg-card border-2 border-[#999999] rounded-lg">
-          <span className="section-header text-[0.5rem] mb-0.5">LEADER LAP</span>
-          <span className="font-data text-4xl font-bold text-text-primary tracking-tight leading-none">
-            {(() => {
-              const leader = bridge.positions.find((p) => p.overallPosition === 1);
-              return leader ? leader.lastLapCompleted : '—';
-            })()}
-          </span>
+          {/* Leader Lap */}
+          <div className="flex flex-col items-center px-6 py-2 bg-bg-card border-2 border-[#999999] rounded-lg">
+            <span className="section-header text-[0.5rem] mb-0.5">LEADER LAP</span>
+            <span className="font-data text-4xl font-bold text-text-primary tracking-tight leading-none">
+              {(() => {
+                const leader = bridge.positions.find((p) => p.overallPosition === 1);
+                return leader ? leader.lastLapCompleted : '—';
+              })()}
+            </span>
+          </div>
         </div>
-
       </div>
 
       {/* Main content area */}

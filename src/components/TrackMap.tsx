@@ -170,6 +170,7 @@ export function TrackMap({ coordinates, corners, startFinish, rotation = 0, isLo
               stroke="#000"
               strokeWidth={0.5}
               paintOrder="stroke fill"
+              transform={`rotate(${-rotation}, ${lx}, ${ly})`}
             >
               {SECTOR_LABELS[i]}
             </text>
@@ -220,6 +221,7 @@ export function TrackMap({ coordinates, corners, startFinish, rotation = 0, isLo
                 stroke="#000"
                 strokeWidth={0.4}
                 paintOrder="stroke fill"
+                transform={`rotate(${-rotation}, ${labelX}, ${labelY})`}
               >
                 {corner.name}
               </text>

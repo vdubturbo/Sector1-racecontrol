@@ -42,6 +42,7 @@ export function useActivePitStops(
 
     let cancelled = false;
     let channel: RealtimeChannel | null = null;
+    let pollIntervalId: ReturnType<typeof setInterval> | null = null;
     setState({ pitStops: [], isLoading: true, error: null });
 
     const fetchData = async () => {
@@ -78,6 +79,14 @@ export function useActivePitStops(
       if (!cancelled) setState({ pitStops: rows, isLoading: false, error: null });
     };
 
+    const refetchOnError = (err: unknown) => {
+      if (cancelled) return;
+      setState((s) => ({
+        ...s,
+        error: err instanceof Error ? err.message : 'Refetch failed',
+      }));
+    };
+
     fetchData()
       .then(() => {
         if (cancelled) return;
@@ -92,16 +101,18 @@ export function useActivePitStops(
               filter: `session_id=eq.${sessionUuid}`,
             },
             () => {
-              fetchData().catch((err) => {
-                if (cancelled) return;
-                setState((s) => ({
-                  ...s,
-                  error: err instanceof Error ? err.message : 'Refetch failed',
-                }));
-              });
+              fetchData().catch(refetchOnError);
             }
           )
           .subscribe();
+
+        // Realtime postgres_changes has been unreliable for newly-inserted
+        // pit_stops rows (channel reconnects, missed events). A 5s poll
+        // sits alongside the subscription as a safety net so new pit
+        // entries surface promptly even when the channel misses them.
+        pollIntervalId = setInterval(() => {
+          fetchData().catch(refetchOnError);
+        }, 5000);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -115,6 +126,7 @@ export function useActivePitStops(
     return () => {
       cancelled = true;
       if (channel) channel.unsubscribe();
+      if (pollIntervalId) clearInterval(pollIntervalId);
     };
   }, [sessionUuid, userId]);
 
