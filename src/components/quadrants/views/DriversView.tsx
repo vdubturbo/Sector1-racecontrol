@@ -17,7 +17,7 @@ function formatDuration(ms: number): string {
   return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-type SortColumn = 'car' | 'team' | 'laps' | 'inCar';
+type SortColumn = 'car' | 'team' | 'driver' | 'laps' | 'inCar';
 type SortDirection = 'asc' | 'desc';
 
 interface DriverRow {
@@ -40,6 +40,7 @@ function compareCarNumbers(a: string, b: string): number {
 const COMPARATORS: Record<SortColumn, (a: DriverRow, b: DriverRow) => number> = {
   car: (a, b) => compareCarNumbers(a.carNumber, b.carNumber),
   team: (a, b) => (a.teamName || '').localeCompare(b.teamName || ''),
+  driver: (a, b) => (a.driverName || '').localeCompare(b.driverName || ''),
   laps: (a, b) => a.laps - b.laps,
   inCar: (a, b) => a.elapsedMs - b.elapsedMs,
 };
@@ -136,12 +137,15 @@ export function DriversView(_props: QuadViewProps) {
 
   return (
     <div className="flex flex-col">
-      <div className="grid grid-cols-[3.5rem_1fr_auto_auto] gap-3 px-3 py-1.5 border-b border-border-default bg-bg-surface text-xs uppercase tracking-wider text-text-secondary font-semibold">
+      <div className="grid grid-cols-[3.5rem_1fr_1fr_auto_auto] gap-3 px-3 py-1.5 border-b border-border-default bg-bg-surface text-xs uppercase tracking-wider text-text-secondary font-semibold">
         <SortHeader column="car" current={sortColumn} direction={sortDirection} onSort={handleSort}>
           Car
         </SortHeader>
         <SortHeader column="team" current={sortColumn} direction={sortDirection} onSort={handleSort}>
-          Team / Driver
+          Team
+        </SortHeader>
+        <SortHeader column="driver" current={sortColumn} direction={sortDirection} onSort={handleSort}>
+          Driver
         </SortHeader>
         <SortHeader column="laps" current={sortColumn} direction={sortDirection} onSort={handleSort} align="right">
           Laps
@@ -155,7 +159,7 @@ export function DriversView(_props: QuadViewProps) {
         {rows.map((row) => (
           <div
             key={row.carNumber}
-            className="grid grid-cols-[3.5rem_1fr_auto_auto] gap-3 px-3 py-2 items-center"
+            className="grid grid-cols-[3.5rem_1fr_1fr_auto_auto] gap-3 px-3 py-2 items-center"
           >
             <div className="flex items-center gap-1.5">
               <span className="font-data text-base font-bold text-accent-orange">
@@ -167,13 +171,11 @@ export function DriversView(_props: QuadViewProps) {
                 </span>
               )}
             </div>
-            <div className="min-w-0 leading-tight">
-              <div className="text-sm text-text-secondary truncate" title={row.teamName}>
-                {row.teamName || '—'}
-              </div>
-              <div className="text-xs text-text-primary truncate" title={row.driverName}>
-                {row.driverName}
-              </div>
+            <div className="min-w-0 text-sm text-text-secondary truncate" title={row.teamName}>
+              {row.teamName || '—'}
+            </div>
+            <div className="min-w-0 text-sm text-text-primary truncate" title={row.driverName}>
+              {row.driverName}
             </div>
             <span className="font-data text-base text-text-primary tabular-nums text-right">
               {row.laps}
