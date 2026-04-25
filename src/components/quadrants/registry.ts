@@ -4,6 +4,7 @@ import { LeadersView } from './views/LeadersView';
 import { PitRoadView } from './views/PitRoadView';
 import { RaceLogSummaryView } from './views/RaceLogSummaryView';
 import { TrackMapView } from './views/TrackMapView';
+import { WeatherMapView } from './views/WeatherMapView';
 
 /**
  * Registry of views that can appear in a quadrant slot.
@@ -45,6 +46,15 @@ export const QUAD_VIEWS: QuadViewDescriptor[] = [
     component: DriversView,
     requiresEvent: true,
     scrollable: true,
+  },
+  {
+    id: 'weather-map',
+    label: 'Weather Map',
+    icon: '☁️',
+    category: 'other',
+    component: WeatherMapView,
+    requiresEvent: true,
+    autoFit: false,
   },
   {
     id: 'pit-road',
