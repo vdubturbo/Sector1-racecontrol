@@ -60,15 +60,32 @@ export function PitRoadView(_props: QuadViewProps) {
   }, []);
 
   const now = Date.now();
-  // Dedupe by car number, keeping the most recent pit_in_time. The bridge
-  // currently never writes pit_out_time, so a single car can accumulate
-  // multiple "open" rows across the session. Showing the newest is the
-  // closest we can get to "current stop" until that write path is fixed.
+  // Cross-check open pit_stops rows against the live bridge isInPit signal.
+  // The bridge can strand entry rows (in-memory state lost on restart, or
+  // reconciliation gaps for cars that go quiet after a false-positive
+  // entry), and persisted rows alone can't tell stranded from active.
+  // Skip a row only when the bridge is reporting the car AND says it's not
+  // in pit; an undefined live signal (car not in feed) is left alone so a
+  // disconnected feed doesn't blank pit road.
+  const liveInPitByCar = new Map<string, boolean>();
+  for (const pos of bridge.positions) {
+    if (pos.carNumber) liveInPitByCar.set(pos.carNumber, pos.isInPit);
+  }
+
+  // Dedupe to one open row per car. Newest pit_in_time wins, with id as a
+  // tie-break for determinism.
   const latestByCar = new Map<string, typeof pitStops[number]>();
   for (const stop of pitStops) {
     if (!stop.carNumber) continue;
+    if (liveInPitByCar.get(stop.carNumber) === false) continue;
     const existing = latestByCar.get(stop.carNumber);
-    if (!existing || Date.parse(stop.pitInTime) > Date.parse(existing.pitInTime)) {
+    if (!existing) {
+      latestByCar.set(stop.carNumber, stop);
+      continue;
+    }
+    const tNew = Date.parse(stop.pitInTime);
+    const tOld = Date.parse(existing.pitInTime);
+    if (tNew > tOld || (tNew === tOld && stop.id > existing.id)) {
       latestByCar.set(stop.carNumber, stop);
     }
   }
