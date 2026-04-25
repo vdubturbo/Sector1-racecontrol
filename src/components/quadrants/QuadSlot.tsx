@@ -40,8 +40,11 @@ export function QuadSlot({
 
   return (
     <section className="flex flex-col bg-bg-card border-2 border-[#999999] rounded-lg overflow-hidden min-h-0">
-      {/* Header */}
-      <div ref={menuRef} className="relative flex items-center justify-between px-3 py-1.5 border-b border-border-default bg-bg-surface shrink-0">
+      {/* Header — explicit z-index puts it (and the picker dropdown) above
+          any view body that creates its own stacking contexts (e.g. the
+          Leaflet weather map, whose tile panes/controls would otherwise
+          paint over the picker menu and make the slot un-changeable). */}
+      <div ref={menuRef} className="relative z-10 flex items-center justify-between px-3 py-1.5 border-b border-border-default bg-bg-surface shrink-0">
         <div className="flex items-center gap-2 text-[0.625rem] uppercase tracking-wider text-text-secondary font-semibold truncate">
           {descriptor?.icon && <span className="text-sm">{descriptor.icon}</span>}
           <span>{descriptor?.label ?? slotLabel}</span>
