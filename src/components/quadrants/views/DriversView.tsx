@@ -17,10 +17,50 @@ function formatDuration(ms: number): string {
   return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+type SortColumn = 'car' | 'team' | 'laps' | 'inCar';
+type SortDirection = 'asc' | 'desc';
+
+interface DriverRow {
+  carNumber: string;
+  teamName: string;
+  driverName: string;
+  laps: number;
+  elapsedMs: number;
+  inCarSource: 'db' | 'local' | 'none';
+  isInPit: boolean;
+}
+
+function compareCarNumbers(a: string, b: string): number {
+  const an = parseInt(a, 10);
+  const bn = parseInt(b, 10);
+  if (Number.isFinite(an) && Number.isFinite(bn) && an !== bn) return an - bn;
+  return a.localeCompare(b);
+}
+
+const COMPARATORS: Record<SortColumn, (a: DriverRow, b: DriverRow) => number> = {
+  car: (a, b) => compareCarNumbers(a.carNumber, b.carNumber),
+  team: (a, b) => (a.teamName || '').localeCompare(b.teamName || ''),
+  laps: (a, b) => a.laps - b.laps,
+  inCar: (a, b) => a.elapsedMs - b.elapsedMs,
+};
+
 export function DriversView(_props: QuadViewProps) {
   const bridge = useBridgeSocket();
   const { sessionUuid, userId } = useQuadContext();
   const { drivers: sessionDrivers } = useSessionDrivers(sessionUuid, userId);
+  const [sortColumn, setSortColumn] = useState<SortColumn>('car');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  const handleSort = (col: SortColumn) => {
+    if (col === sortColumn) {
+      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortColumn(col);
+      // Default to descending for the numeric/temporal columns since
+      // "leaders/longest first" is the more useful starting view there.
+      setSortDirection(col === 'laps' || col === 'inCar' ? 'desc' : 'asc');
+    }
+  };
 
   // Authoritative stint start by car number, sourced from session_drivers
   // (is_primary row per car).
@@ -59,7 +99,7 @@ export function DriversView(_props: QuadViewProps) {
   }, []);
 
   const now = Date.now();
-  const rows = bridge.positions
+  const rows: DriverRow[] = bridge.positions
     .filter((pos) => pos.driverName)
     .map((pos) => {
       const dbStart = stintStartByCar.get(pos.carNumber);
@@ -76,16 +116,15 @@ export function DriversView(_props: QuadViewProps) {
         driverName: pos.driverName,
         laps: pos.lastLapCompleted,
         elapsedMs,
-        inCarSource: dbStart ? ('db' as const) : fallbackStart ? ('local' as const) : ('none' as const),
+        inCarSource: dbStart ? 'db' : fallbackStart ? 'local' : 'none',
         isInPit: pos.isInPit,
       };
-    })
-    .sort((a, b) => {
-      const an = parseInt(a.carNumber, 10);
-      const bn = parseInt(b.carNumber, 10);
-      if (Number.isFinite(an) && Number.isFinite(bn) && an !== bn) return an - bn;
-      return a.carNumber.localeCompare(b.carNumber);
     });
+
+  rows.sort((a, b) => {
+    const result = COMPARATORS[sortColumn](a, b);
+    return sortDirection === 'asc' ? result : -result;
+  });
 
   if (rows.length === 0) {
     return (
@@ -98,10 +137,18 @@ export function DriversView(_props: QuadViewProps) {
   return (
     <div className="flex flex-col">
       <div className="grid grid-cols-[3.5rem_1fr_auto_auto] gap-3 px-3 py-1.5 border-b border-border-default bg-bg-surface text-xs uppercase tracking-wider text-text-secondary font-semibold">
-        <span>Car</span>
-        <span>Team / Driver</span>
-        <span className="text-right">Laps</span>
-        <span className="text-right">In Car</span>
+        <SortHeader column="car" current={sortColumn} direction={sortDirection} onSort={handleSort}>
+          Car
+        </SortHeader>
+        <SortHeader column="team" current={sortColumn} direction={sortDirection} onSort={handleSort}>
+          Team / Driver
+        </SortHeader>
+        <SortHeader column="laps" current={sortColumn} direction={sortDirection} onSort={handleSort} align="right">
+          Laps
+        </SortHeader>
+        <SortHeader column="inCar" current={sortColumn} direction={sortDirection} onSort={handleSort} align="right">
+          In Car
+        </SortHeader>
       </div>
 
       <div className="divide-y divide-border-default/50">
@@ -153,5 +200,32 @@ export function DriversView(_props: QuadViewProps) {
         ))}
       </div>
     </div>
+  );
+}
+
+interface SortHeaderProps {
+  column: SortColumn;
+  current: SortColumn;
+  direction: SortDirection;
+  onSort: (col: SortColumn) => void;
+  align?: 'left' | 'right';
+  children: React.ReactNode;
+}
+
+function SortHeader({ column, current, direction, onSort, align = 'left', children }: SortHeaderProps) {
+  const isActive = column === current;
+  const arrow = isActive ? (direction === 'asc' ? '▲' : '▼') : '';
+  const justify = align === 'right' ? 'justify-end' : 'justify-start';
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(column)}
+      className={`flex items-center gap-1 ${justify} text-xs uppercase tracking-wider font-semibold transition-colors ${
+        isActive ? 'text-accent-orange' : 'text-text-secondary hover:text-text-primary'
+      }`}
+    >
+      <span>{children}</span>
+      <span className="text-[0.5rem]">{arrow || ' '}</span>
+    </button>
   );
 }
