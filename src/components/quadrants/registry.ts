@@ -26,6 +26,7 @@ export const QUAD_VIEWS: QuadViewDescriptor[] = [
     category: 'incidents',
     component: RaceLogSummaryView,
     requiresEvent: true,
+    scrollable: true,
   },
   {
     id: 'track-map',

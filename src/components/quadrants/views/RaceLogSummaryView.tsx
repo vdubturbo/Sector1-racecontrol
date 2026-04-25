@@ -4,10 +4,6 @@ import { useControlLog } from '@/hooks/useControlLog';
 import { ACTION_STYLES } from '@/components/RaceLog';
 import type { QuadViewProps } from '../types';
 
-/** Most recent entries displayed in the quadrant. The full log lives in the
- *  Incidents & Penalties popout; this is the summary/ticker view. */
-const MAX_VISIBLE = 15;
-
 export function RaceLogSummaryView({ eventId }: QuadViewProps) {
   const controlLog = useControlLog(eventId);
 
@@ -43,13 +39,10 @@ export function RaceLogSummaryView({ eventId }: QuadViewProps) {
     );
   }
 
-  const visible = controlLog.entries.slice(0, MAX_VISIBLE);
-  const hiddenCount = Math.max(0, controlLog.entries.length - visible.length);
-
   return (
     <div className="flex flex-col">
       {/* Column headers */}
-      <div className="grid grid-cols-[4rem_1fr_2fr_5rem] gap-2 px-3 py-1.5 border-b border-border-default bg-bg-surface text-[0.625rem] uppercase tracking-wider text-text-secondary font-semibold">
+      <div className="grid grid-cols-[5rem_1fr_2fr_5rem] gap-2 px-3 py-1.5 border-b border-border-default bg-bg-surface text-[0.625rem] uppercase tracking-wider text-text-secondary font-semibold">
         <span>Time</span>
         <span>Cars</span>
         <span>Infraction</span>
@@ -58,12 +51,12 @@ export function RaceLogSummaryView({ eventId }: QuadViewProps) {
 
       {/* Entries */}
       <div className="divide-y divide-border-default/50">
-        {visible.map((entry) => {
+        {controlLog.entries.map((entry) => {
           const action = ACTION_STYLES[entry.action];
           return (
             <div
               key={entry.id}
-              className="grid grid-cols-[4rem_1fr_2fr_5rem] gap-2 px-3 py-1.5 items-center"
+              className="grid grid-cols-[5rem_1fr_2fr_5rem] gap-2 px-3 py-1.5 items-center"
               title={entry.notes || undefined}
             >
               <span className="font-data text-xs text-text-muted tabular-nums">
@@ -94,12 +87,6 @@ export function RaceLogSummaryView({ eventId }: QuadViewProps) {
           );
         })}
       </div>
-
-      {hiddenCount > 0 && (
-        <div className="px-3 py-1.5 text-[0.625rem] text-text-muted italic border-t border-border-default bg-bg-surface">
-          +{hiddenCount} older {hiddenCount === 1 ? 'entry' : 'entries'} — open Incidents & Penalties for the full log
-        </div>
-      )}
     </div>
   );
 }

@@ -16,6 +16,15 @@ interface RedMistControlLogEntry {
   o: number;   // order / sequence number
 }
 
+/** Bridge timestamps arrive as full ISO strings (e.g. "2026-04-25T09:00:00").
+ *  Race control only cares about wall-clock time, so strip the date and keep
+ *  HH:MM:SS. Falls through unchanged for non-ISO inputs. */
+function formatTimestamp(raw: string): string {
+  if (!raw) return '';
+  const m = raw.match(/T(\d{2}:\d{2}:\d{2})/);
+  return m ? m[1] : raw;
+}
+
 function classifyAction(action: string): ActionType {
   const lower = (action ?? '').toLowerCase();
   if (lower.includes('black flag') || lower.includes('black-flag') || lower.includes('meatball')) return 'black-flag';
@@ -47,7 +56,7 @@ function mapEntry(raw: RedMistControlLogEntry, index: number): RaceLogEntry {
 
   return {
     id: `${raw.o ?? 'x'}-${index}`,
-    timestamp: raw.t ?? '',
+    timestamp: formatTimestamp(raw.t ?? ''),
     carNumbers,
     station: raw.cor ?? '',
     infraction: parseInfraction(raw.n, raw.a),

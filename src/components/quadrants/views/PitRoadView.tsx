@@ -11,6 +11,7 @@ type PitRow = {
   carNumber: string;
   teamName: string;
   driverName: string;
+  lapNumber: number;
   elapsedMs: number;
 };
 
@@ -98,6 +99,7 @@ export function PitRoadView(_props: QuadViewProps) {
         carNumber: stop.carNumber,
         teamName: teamByCar.get(stop.carNumber) || '',
         driverName: driverByCar.get(stop.carNumber) || '',
+        lapNumber: stop.lapNumber,
         elapsedMs,
       };
     })
@@ -129,30 +131,33 @@ export function PitRoadView(_props: QuadViewProps) {
 
   return (
     <div className="flex flex-col">
-      <div className="grid grid-cols-[3.5rem_1fr_auto] gap-3 px-3 py-1.5 border-b border-border-default bg-bg-surface text-xs uppercase tracking-wider text-text-secondary font-semibold">
+      <div className="grid grid-cols-[3.5rem_1fr_1fr_3rem_auto] gap-3 px-3 py-1.5 border-b border-border-default bg-bg-surface text-xs uppercase tracking-wider text-text-secondary font-semibold">
         <span>Car</span>
-        <span>Team / Driver</span>
-        <span className="text-right">In Pit</span>
+        <span>Team</span>
+        <span>Driver</span>
+        <span className="text-right">Lap</span>
+        <span className="text-right pl-3">In Pit</span>
       </div>
 
       <div className="divide-y divide-border-default/50">
         {rows.map((row) => (
           <div
             key={row.carNumber}
-            className="grid grid-cols-[3.5rem_1fr_auto] gap-3 px-3 py-2 items-center"
+            className="grid grid-cols-[3.5rem_1fr_1fr_3rem_auto] gap-3 px-3 py-2 items-center"
           >
             <span className="font-data text-base font-bold text-accent-orange">
               #{row.carNumber}
             </span>
-            <div className="min-w-0 leading-tight">
-              <div className="text-sm text-text-secondary truncate" title={row.teamName}>
-                {row.teamName || '—'}
-              </div>
-              <div className="text-xs text-text-primary truncate" title={row.driverName}>
-                {row.driverName || '—'}
-              </div>
+            <div className="min-w-0 text-sm text-text-secondary truncate" title={row.teamName}>
+              {row.teamName || '—'}
             </div>
-            <span className="font-data text-base text-accent-orange tabular-nums text-right">
+            <div className="min-w-0 text-sm text-text-primary truncate" title={row.driverName}>
+              {row.driverName || '—'}
+            </div>
+            <span className="font-data text-sm text-text-secondary tabular-nums text-right">
+              {row.lapNumber > 0 ? row.lapNumber : '—'}
+            </span>
+            <span className="font-data text-base text-accent-orange tabular-nums text-right pl-3">
               {formatDuration(row.elapsedMs)}
             </span>
           </div>
