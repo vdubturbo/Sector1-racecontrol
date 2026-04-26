@@ -100,15 +100,18 @@ export function DriversView(_props: QuadViewProps) {
   }, []);
 
   const now = Date.now();
-  // Race start as published by the bridge — null until the race has actually
-  // begun (TTG hasn't decreased yet). Clamping each driver's stint to
-  // max(driverJoinTime, raceStartMs) keeps pre-race grid time out of the
-  // displayed elapsed; mid-race driver swaps still time correctly because
-  // their join is later than raceStartMs.
-  const raceStartMs = bridge.raceState?.raceStartTime
-    ? Date.parse(bridge.raceState.raceStartTime)
-    : null;
-  const isPreRace = raceStartMs == null;
+  // Three cases on the bridge-published raceStartTime:
+  //   undefined → legacy bridge that doesn't publish the field. Fall back
+  //               to old behavior (timer ticks from driver join time).
+  //   null      → new bridge says race hasn't started yet (TTG hasn't
+  //               decreased). Show PRE-RACE so grid time is excluded.
+  //   string    → race started. Clamp to max(driverJoin, raceStart) so
+  //               mid-race driver swaps still time correctly.
+  const raceStartField = bridge.raceState?.raceStartTime;
+  const bridgeKnowsRaceStart = raceStartField !== undefined;
+  const raceStartMs =
+    typeof raceStartField === 'string' ? Date.parse(raceStartField) : null;
+  const isPreRace = bridgeKnowsRaceStart && raceStartMs == null;
 
   const rows: DriverRow[] = bridge.positions
     .filter((pos) => pos.driverName)
@@ -119,13 +122,17 @@ export function DriversView(_props: QuadViewProps) {
         fallback?.driverName === pos.driverName ? fallback.since : undefined;
 
       const stintStart = dbStart ?? fallbackStart;
-      const effectiveStart =
-        stintStart != null && raceStartMs != null
-          ? Math.max(stintStart, raceStartMs)
-          : stintStart != null
-          ? stintStart
-          : raceStartMs;
-      const elapsedMs = !isPreRace && effectiveStart ? now - effectiveStart : 0;
+      let effectiveStart: number | null = null;
+      if (!isPreRace) {
+        if (stintStart != null && raceStartMs != null) {
+          effectiveStart = Math.max(stintStart, raceStartMs);
+        } else if (stintStart != null) {
+          effectiveStart = stintStart;
+        } else if (raceStartMs != null) {
+          effectiveStart = raceStartMs;
+        }
+      }
+      const elapsedMs = effectiveStart != null ? now - effectiveStart : 0;
 
       return {
         carNumber: pos.carNumber,
