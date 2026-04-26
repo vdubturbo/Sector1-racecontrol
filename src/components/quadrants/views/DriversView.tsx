@@ -100,6 +100,16 @@ export function DriversView(_props: QuadViewProps) {
   }, []);
 
   const now = Date.now();
+  // Race start as published by the bridge — null until the race has actually
+  // begun (TTG hasn't decreased yet). Clamping each driver's stint to
+  // max(driverJoinTime, raceStartMs) keeps pre-race grid time out of the
+  // displayed elapsed; mid-race driver swaps still time correctly because
+  // their join is later than raceStartMs.
+  const raceStartMs = bridge.raceState?.raceStartTime
+    ? Date.parse(bridge.raceState.raceStartTime)
+    : null;
+  const isPreRace = raceStartMs == null;
+
   const rows: DriverRow[] = bridge.positions
     .filter((pos) => pos.driverName)
     .map((pos) => {
@@ -109,7 +119,13 @@ export function DriversView(_props: QuadViewProps) {
         fallback?.driverName === pos.driverName ? fallback.since : undefined;
 
       const stintStart = dbStart ?? fallbackStart;
-      const elapsedMs = stintStart ? now - stintStart : 0;
+      const effectiveStart =
+        stintStart != null && raceStartMs != null
+          ? Math.max(stintStart, raceStartMs)
+          : stintStart != null
+          ? stintStart
+          : raceStartMs;
+      const elapsedMs = !isPreRace && effectiveStart ? now - effectiveStart : 0;
 
       return {
         carNumber: pos.carNumber,
@@ -182,21 +198,29 @@ export function DriversView(_props: QuadViewProps) {
             </span>
             <span
               className={`font-data text-base tabular-nums text-right ${
-                row.inCarSource === 'db'
+                isPreRace
+                  ? 'text-text-muted/60'
+                  : row.inCarSource === 'db'
                   ? 'text-accent-orange'
                   : row.inCarSource === 'local'
                   ? 'text-text-muted'
                   : 'text-text-muted/40'
               }`}
               title={
-                row.inCarSource === 'db'
+                isPreRace
+                  ? 'Race has not started yet (timeRemaining has not decreased)'
+                  : row.inCarSource === 'db'
                   ? 'Stint start from session_drivers (DB)'
                   : row.inCarSource === 'local'
                   ? 'Stint start tracked client-side this session — open view before the race for accurate time'
                   : 'No stint start available'
               }
             >
-              {row.inCarSource === 'none' ? '—' : formatDuration(row.elapsedMs)}
+              {isPreRace
+                ? 'PRE-RACE'
+                : row.inCarSource === 'none'
+                ? '—'
+                : formatDuration(row.elapsedMs)}
             </span>
           </div>
         ))}

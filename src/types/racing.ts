@@ -90,6 +90,11 @@ export interface RaceState {
   elapsedTime: string;
   eventId: string;
   timestamp: string;
+  /** ISO timestamp of when the race actually started (the moment timeRemaining
+   *  began decrementing from its initial value). Null until the bridge has
+   *  observed a TTG decrease for this event. Used to clamp stint timers so
+   *  they don't tick during pre-race grid/warmup. */
+  raceStartTime?: string | null;
 }
 
 export interface CompetitorData {
