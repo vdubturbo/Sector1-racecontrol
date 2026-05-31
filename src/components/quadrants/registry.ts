@@ -1,4 +1,5 @@
 import type { QuadViewDescriptor } from './types';
+import { CourseVehiclesView } from './views/CourseVehiclesView';
 import { DriversView } from './views/DriversView';
 import { LeadersView } from './views/LeadersView';
 import { PitRoadView } from './views/PitRoadView';
@@ -62,6 +63,15 @@ export const QUAD_VIEWS: QuadViewDescriptor[] = [
     icon: '🔧',
     category: 'strategy',
     component: PitRoadView,
+    requiresEvent: true,
+    scrollable: true,
+  },
+  {
+    id: 'course-vehicles',
+    label: 'Course Vehicles',
+    icon: '🚨',
+    category: 'incidents',
+    component: CourseVehiclesView,
     requiresEvent: true,
     scrollable: true,
   },
