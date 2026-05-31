@@ -82,6 +82,14 @@ export const PANELS: PanelDefinition[] = [
     icon: '🎬',
     windowFeatures: 'width=1200,height=900',
   },
+  {
+    id: 'course-vehicles',
+    name: 'Course Vehicles',
+    description: 'Safety/pace/medical vehicle config and live deployment',
+    route: '/panels/course-vehicles',
+    icon: '🚨',
+    windowFeatures: 'width=1100,height=850',
+  },
 ];
 
 export const FLAG_COLORS: Record<string, { bg: string; text: string; label: string }> = {

@@ -376,6 +376,136 @@ export type Database = {
           },
         ]
       }
+      course_vehicle_deployments: {
+        Row: {
+          clear_leader_lap: number | null
+          clear_session_elapsed_ms: number | null
+          cleared_at: string | null
+          course_vehicle_id: string
+          created_at: string
+          deploy_leader_lap: number | null
+          deploy_session_elapsed_ms: number | null
+          deployed_at: string
+          deployment_type: string
+          duration_seconds: number | null
+          id: string
+          sentinel_serial: string
+          session_id: string
+          trigger_source: string
+          updated_at: string
+        }
+        Insert: {
+          clear_leader_lap?: number | null
+          clear_session_elapsed_ms?: number | null
+          cleared_at?: string | null
+          course_vehicle_id: string
+          created_at?: string
+          deploy_leader_lap?: number | null
+          deploy_session_elapsed_ms?: number | null
+          deployed_at: string
+          deployment_type: string
+          duration_seconds?: number | null
+          id?: string
+          sentinel_serial: string
+          session_id: string
+          trigger_source: string
+          updated_at?: string
+        }
+        Update: {
+          clear_leader_lap?: number | null
+          clear_session_elapsed_ms?: number | null
+          cleared_at?: string | null
+          course_vehicle_id?: string
+          created_at?: string
+          deploy_leader_lap?: number | null
+          deploy_session_elapsed_ms?: number | null
+          deployed_at?: string
+          deployment_type?: string
+          duration_seconds?: number | null
+          id?: string
+          sentinel_serial?: string
+          session_id?: string
+          trigger_source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_vehicle_deployments_course_vehicle_id_fkey"
+            columns: ["course_vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "course_vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_vehicle_deployments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "racing_sessions"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "course_vehicle_deployments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_active_sessions_summary"
+            referencedColumns: ["session_id"]
+          },
+        ]
+      }
+      course_vehicles: {
+        Row: {
+          color: string
+          created_at: string
+          enabled: boolean
+          event_id: string
+          icon: string | null
+          id: string
+          label: string
+          role: string
+          sentinel_serial: string
+          updated_at: string
+        }
+        Insert: {
+          color: string
+          created_at?: string
+          enabled?: boolean
+          event_id: string
+          icon?: string | null
+          id?: string
+          label: string
+          role: string
+          sentinel_serial: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          enabled?: boolean
+          event_id?: string
+          icon?: string | null
+          id?: string
+          label?: string
+          role?: string
+          sentinel_serial?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_vehicles_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "racing_events"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "course_vehicles_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_active_sessions_summary"
+            referencedColumns: ["event_id"]
+          },
+        ]
+      }
       data_sharing_permissions: {
         Row: {
           access_level: string
@@ -1128,6 +1258,149 @@ export type Database = {
           },
         ]
       }
+      hpde_events: {
+        Row: {
+          accent_color: string | null
+          background_color: string | null
+          created_at: string
+          ends_at: string
+          event_id: string
+          event_type: string
+          hero_image_url: string | null
+          is_published: boolean
+          logo_url: string | null
+          name: string
+          promoter_id: string
+          schedule_text: string | null
+          secondary_color: string | null
+          slug: string | null
+          starts_at: string
+          timezone: string | null
+          track_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string | null
+          background_color?: string | null
+          created_at?: string
+          ends_at: string
+          event_id?: string
+          event_type?: string
+          hero_image_url?: string | null
+          is_published?: boolean
+          logo_url?: string | null
+          name: string
+          promoter_id: string
+          schedule_text?: string | null
+          secondary_color?: string | null
+          slug?: string | null
+          starts_at: string
+          timezone?: string | null
+          track_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string | null
+          background_color?: string | null
+          created_at?: string
+          ends_at?: string
+          event_id?: string
+          event_type?: string
+          hero_image_url?: string | null
+          is_published?: boolean
+          logo_url?: string | null
+          name?: string
+          promoter_id?: string
+          schedule_text?: string | null
+          secondary_color?: string | null
+          slug?: string | null
+          starts_at?: string
+          timezone?: string | null
+          track_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hpde_events_promoter_id_fkey"
+            columns: ["promoter_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hpde_events_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hpde_streams: {
+        Row: {
+          block_reason: string | null
+          blocked: boolean
+          car_number: string | null
+          created_at: string
+          driver_name: string | null
+          ended_at: string | null
+          event_id: string
+          external_stream_id: string | null
+          metadata: Json | null
+          source: string
+          started_at: string
+          status: string
+          stream_id: string
+          stream_url: string
+          thumbnail_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          block_reason?: string | null
+          blocked?: boolean
+          car_number?: string | null
+          created_at?: string
+          driver_name?: string | null
+          ended_at?: string | null
+          event_id: string
+          external_stream_id?: string | null
+          metadata?: Json | null
+          source?: string
+          started_at?: string
+          status?: string
+          stream_id?: string
+          stream_url: string
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          block_reason?: string | null
+          blocked?: boolean
+          car_number?: string | null
+          created_at?: string
+          driver_name?: string | null
+          ended_at?: string | null
+          event_id?: string
+          external_stream_id?: string | null
+          metadata?: Json | null
+          source?: string
+          started_at?: string
+          status?: string
+          stream_id?: string
+          stream_url?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hpde_streams_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "hpde_events"
+            referencedColumns: ["event_id"]
+          },
+        ]
+      }
       lap_fuel_data: {
         Row: {
           car_id: string
@@ -1523,6 +1796,121 @@ export type Database = {
         }
         Relationships: []
       }
+      photographer_event_links: {
+        Row: {
+          created_at: string
+          event_kind: string
+          gallery_url: string | null
+          hpde_event_id: string | null
+          id: string
+          is_featured: boolean
+          notes: string | null
+          photographer_id: string
+          racing_event_id: string | null
+          service_types: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_kind: string
+          gallery_url?: string | null
+          hpde_event_id?: string | null
+          id?: string
+          is_featured?: boolean
+          notes?: string | null
+          photographer_id: string
+          racing_event_id?: string | null
+          service_types?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_kind?: string
+          gallery_url?: string | null
+          hpde_event_id?: string | null
+          id?: string
+          is_featured?: boolean
+          notes?: string | null
+          photographer_id?: string
+          racing_event_id?: string | null
+          service_types?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photographer_event_links_hpde_event_id_fkey"
+            columns: ["hpde_event_id"]
+            isOneToOne: false
+            referencedRelation: "hpde_events"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "photographer_event_links_photographer_id_fkey"
+            columns: ["photographer_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photographer_event_links_racing_event_id_fkey"
+            columns: ["racing_event_id"]
+            isOneToOne: false
+            referencedRelation: "racing_events"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "photographer_event_links_racing_event_id_fkey"
+            columns: ["racing_event_id"]
+            isOneToOne: false
+            referencedRelation: "v_active_sessions_summary"
+            referencedColumns: ["event_id"]
+          },
+        ]
+      }
+      photographer_profiles: {
+        Row: {
+          business_name: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          home_region: string | null
+          is_active: boolean
+          service_types: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          business_name?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          home_region?: string | null
+          is_active?: boolean
+          service_types?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          business_name?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          home_region?: string | null
+          is_active?: boolean
+          service_types?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photographer_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pit_stop_fuel: {
         Row: {
           car_id: string
@@ -1673,6 +2061,53 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      promoter_profiles: {
+        Row: {
+          business_name: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          event_types: string[]
+          founded_year: number | null
+          home_region: string | null
+          is_active: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          business_name?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          event_types?: string[]
+          founded_year?: number | null
+          home_region?: string | null
+          is_active?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          business_name?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          event_types?: string[]
+          founded_year?: number | null
+          home_region?: string | null
+          is_active?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promoter_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       racing_cars: {
         Row: {
@@ -2465,6 +2900,119 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "team_subscription_status"
             referencedColumns: ["team_id"]
+          },
+        ]
+      }
+      sentinel_assignments: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          sentinel_serial: string
+          transponder_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          sentinel_serial: string
+          transponder_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          sentinel_serial?: string
+          transponder_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sentinel_assignments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "racing_events"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "sentinel_assignments_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "v_active_sessions_summary"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "sentinel_assignments_transponder_id_fkey"
+            columns: ["transponder_id"]
+            isOneToOne: false
+            referencedRelation: "transponders"
+            referencedColumns: ["transponder_id"]
+          },
+        ]
+      }
+      sentinel_telemetry: {
+        Row: {
+          device_timestamp: string | null
+          heading_degrees: number | null
+          id: number
+          lat: number | null
+          lon: number | null
+          raw_payload: Json
+          received_at: string
+          sentinel_serial: string
+          session_id: string
+          speed_mph: number | null
+          transponder_id: string | null
+        }
+        Insert: {
+          device_timestamp?: string | null
+          heading_degrees?: number | null
+          id?: number
+          lat?: number | null
+          lon?: number | null
+          raw_payload?: Json
+          received_at?: string
+          sentinel_serial: string
+          session_id: string
+          speed_mph?: number | null
+          transponder_id?: string | null
+        }
+        Update: {
+          device_timestamp?: string | null
+          heading_degrees?: number | null
+          id?: number
+          lat?: number | null
+          lon?: number | null
+          raw_payload?: Json
+          received_at?: string
+          sentinel_serial?: string
+          session_id?: string
+          speed_mph?: number | null
+          transponder_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sentinel_telemetry_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "racing_sessions"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "sentinel_telemetry_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "v_active_sessions_summary"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "sentinel_telemetry_transponder_id_fkey"
+            columns: ["transponder_id"]
+            isOneToOne: false
+            referencedRelation: "transponders"
+            referencedColumns: ["transponder_id"]
           },
         ]
       }
@@ -4399,58 +4947,91 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          address: string | null
           avatar_url: string | null
+          bio: string | null
+          branding_accent_color: string | null
+          branding_background_color: string | null
+          branding_logo_url: string | null
+          branding_secondary_color: string | null
           created_at: string | null
           email: string
           emergency_contact: Json | null
+          facebook_url: string | null
           full_name: string | null
           id: string
+          instagram_handle: string | null
           nationality: string | null
           nickname: string | null
           permissions: Json | null
           phone: string | null
+          portfolio_urls: string[]
           profile_picture_url: string | null
           racing_license_expiry: string | null
           racing_license_number: string | null
           role: Database["public"]["Enums"]["user_role"]
           team_id: string | null
+          twitter_handle: string | null
           updated_at: string | null
+          website_url: string | null
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
+          bio?: string | null
+          branding_accent_color?: string | null
+          branding_background_color?: string | null
+          branding_logo_url?: string | null
+          branding_secondary_color?: string | null
           created_at?: string | null
           email: string
           emergency_contact?: Json | null
+          facebook_url?: string | null
           full_name?: string | null
           id: string
+          instagram_handle?: string | null
           nationality?: string | null
           nickname?: string | null
           permissions?: Json | null
           phone?: string | null
+          portfolio_urls?: string[]
           profile_picture_url?: string | null
           racing_license_expiry?: string | null
           racing_license_number?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           team_id?: string | null
+          twitter_handle?: string | null
           updated_at?: string | null
+          website_url?: string | null
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
+          bio?: string | null
+          branding_accent_color?: string | null
+          branding_background_color?: string | null
+          branding_logo_url?: string | null
+          branding_secondary_color?: string | null
           created_at?: string | null
           email?: string
           emergency_contact?: Json | null
+          facebook_url?: string | null
           full_name?: string | null
           id?: string
+          instagram_handle?: string | null
           nationality?: string | null
           nickname?: string | null
           permissions?: Json | null
           phone?: string | null
+          portfolio_urls?: string[]
           profile_picture_url?: string | null
           racing_license_expiry?: string | null
           racing_license_number?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           team_id?: string | null
+          twitter_handle?: string | null
           updated_at?: string | null
+          website_url?: string | null
         }
         Relationships: [
           {
@@ -5317,6 +5898,7 @@ export type Database = {
       }
       get_user_linked_team: { Args: { p_user_id: string }; Returns: string }
       get_user_role: { Args: { user_id: string }; Returns: string }
+      get_user_role_values: { Args: never; Returns: string[] }
       get_user_subscription: {
         Args: { p_user_id: string }
         Returns: {
@@ -5588,6 +6170,8 @@ export type Database = {
         | "series_admin"
         | "pending_setup"
         | "team"
+        | "photographer"
+        | "promoter"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5767,6 +6351,8 @@ export const Constants = {
         "series_admin",
         "pending_setup",
         "team",
+        "photographer",
+        "promoter",
       ],
     },
   },

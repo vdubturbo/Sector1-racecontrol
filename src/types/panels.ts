@@ -7,7 +7,8 @@ export type PanelId =
   | 'track-map'
   | 'classifications'
   | 'comms'
-  | 'media';
+  | 'media'
+  | 'course-vehicles';
 
 export type PanelStatus = 'closed' | 'connected' | 'disconnected';
 
