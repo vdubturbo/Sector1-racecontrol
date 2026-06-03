@@ -424,7 +424,7 @@ export default function CourseVehiclesPanel() {
                         {open && <Badge variant="red">DEPLOYED</Badge>}
                         <div className="flex-1" />
                         {open ? (
-                          <Button variant="primary" onClick={() => manualClear(open)}>Clear</Button>
+                          <Button variant="primary" onClick={() => manualClear(open)}>Recall</Button>
                         ) : (
                           <Button
                             onClick={() => manualDeploy(v, ROLE_TO_DEPLOYMENT_TYPE[v.role] ?? 'other')}
