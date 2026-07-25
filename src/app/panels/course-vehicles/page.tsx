@@ -40,9 +40,24 @@ const ROLE_TO_DEPLOYMENT_TYPE: Record<string, string> = {
 
 const DEFAULT_COLOR = '#f59e0b';
 
+// course_vehicles.source — which telemetry provider tracks this vehicle.
+// 'flagtronics' matches the FT200 device id against the live Flagtronics feed;
+// 'sentinel' matches a Sentinel device broadcast serial.
+const SOURCES = ['flagtronics', 'sentinel'] as const;
+const SOURCE_LABEL: Record<string, string> = {
+  flagtronics: 'Flagtronics (FT200)',
+  sentinel: 'Sentinel',
+};
+// Guidance for the device-id field, which means different things per source.
+const DEVICE_ID_HINT: Record<string, string> = {
+  flagtronics: 'FT200 device id (e.g. 20005352)',
+  sentinel: 'Sentinel broadcast serial',
+};
+
 interface VehicleForm {
   id?: string;
-  sentinel_serial: string;
+  device_id: string;
+  source: string;
   role: string;
   label: string;
   color: string;
@@ -51,7 +66,8 @@ interface VehicleForm {
 }
 
 const EMPTY_FORM: VehicleForm = {
-  sentinel_serial: '',
+  device_id: '',
+  source: 'flagtronics',
   role: 'safety_car',
   label: '',
   color: DEFAULT_COLOR,
@@ -147,9 +163,9 @@ export default function CourseVehiclesPanel() {
 
   const saveVehicle = async () => {
     if (!eventUuid) { setError('No active event'); return; }
-    const serial = form.sentinel_serial.trim();
+    const deviceId = form.device_id.trim();
     const label = form.label.trim();
-    if (!serial) { setError('Sentinel serial is required (the telemetry serial the device broadcasts on)'); return; }
+    if (!deviceId) { setError(`Device ID is required (${DEVICE_ID_HINT[form.source] ?? 'the id the device is tracked by'})`); return; }
     if (!label) { setError('Label is required'); return; }
 
     setBusy(true);
@@ -159,7 +175,8 @@ export default function CourseVehiclesPanel() {
         const { error: err } = await supabase
           .from('course_vehicles')
           .update({
-            sentinel_serial: serial,
+            device_id: deviceId,
+            source: form.source,
             role: form.role,
             label,
             color: form.color,
@@ -173,7 +190,8 @@ export default function CourseVehiclesPanel() {
           .from('course_vehicles')
           .insert({
             event_id: eventUuid,
-            sentinel_serial: serial,
+            device_id: deviceId,
+            source: form.source,
             role: form.role,
             label,
             color: form.color,
@@ -194,7 +212,8 @@ export default function CourseVehiclesPanel() {
   const editVehicle = (v: CourseVehicle) => {
     setForm({
       id: v.id,
-      sentinel_serial: v.sentinel_serial,
+      device_id: v.device_id,
+      source: v.source,
       role: v.role,
       label: v.label,
       color: v.color,
@@ -241,7 +260,7 @@ export default function CourseVehiclesPanel() {
       .insert({
         session_id: sessionUuid,
         course_vehicle_id: v.id,
-        sentinel_serial: v.sentinel_serial,
+        device_id: v.device_id,
         deployment_type: deploymentType,
         trigger_source: 'manual',
         deployed_at: new Date().toISOString(),
@@ -330,12 +349,22 @@ export default function CourseVehiclesPanel() {
               </span>
               <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                 <label className="flex flex-col gap-1">
-                  <span className="text-text-muted">Sentinel serial (telemetry)</span>
+                  <span className="text-text-muted">Source (telemetry)</span>
+                  <select
+                    className="bg-bg-card border border-border-subtle rounded px-2 py-1"
+                    value={form.source}
+                    onChange={(e) => setForm({ ...form, source: e.target.value })}
+                  >
+                    {SOURCES.map((s) => <option key={s} value={s}>{SOURCE_LABEL[s]}</option>)}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-text-muted">Device ID</span>
                   <input
                     className="bg-bg-card border border-border-subtle rounded px-2 py-1"
-                    value={form.sentinel_serial}
-                    onChange={(e) => setForm({ ...form, sentinel_serial: e.target.value })}
-                    placeholder="device broadcast serial"
+                    value={form.device_id}
+                    onChange={(e) => setForm({ ...form, device_id: e.target.value })}
+                    placeholder={DEVICE_ID_HINT[form.source] ?? 'device id'}
                   />
                 </label>
                 <label className="flex flex-col gap-1">
@@ -417,8 +446,9 @@ export default function CourseVehiclesPanel() {
                         />
                         <span className="font-semibold">{v.label}</span>
                         <span className="text-text-muted">{ROLE_LABEL[v.role] ?? v.role}</span>
-                        <span className="text-text-muted truncate max-w-32" title={v.sentinel_serial}>
-                          {v.sentinel_serial}
+                        <Badge>{SOURCE_LABEL[v.source] ?? v.source}</Badge>
+                        <span className="text-text-muted truncate max-w-32" title={v.device_id}>
+                          {v.device_id}
                         </span>
                         {!v.enabled && <Badge>disabled</Badge>}
                         {open && <Badge variant="red">DEPLOYED</Badge>}
@@ -463,7 +493,7 @@ export default function CourseVehiclesPanel() {
                         {d.cleared_at === null
                           ? <Badge variant="red">ACTIVE</Badge>
                           : <Badge>closed</Badge>}
-                        <span className="font-semibold">{v?.label ?? d.sentinel_serial}</span>
+                        <span className="font-semibold">{v?.label ?? d.device_id}</span>
                         <span className="text-text-muted">{d.deployment_type}</span>
                         <Badge variant={d.trigger_source === 'manual' ? 'orange' : 'default'}>
                           {d.trigger_source}

@@ -388,8 +388,8 @@ export type Database = {
           deployed_at: string
           deployment_type: string
           duration_seconds: number | null
+          device_id: string
           id: string
-          sentinel_serial: string
           session_id: string
           trigger_source: string
           updated_at: string
@@ -404,9 +404,9 @@ export type Database = {
           deploy_session_elapsed_ms?: number | null
           deployed_at: string
           deployment_type: string
+          device_id: string
           duration_seconds?: number | null
           id?: string
-          sentinel_serial: string
           session_id: string
           trigger_source: string
           updated_at?: string
@@ -421,9 +421,9 @@ export type Database = {
           deploy_session_elapsed_ms?: number | null
           deployed_at?: string
           deployment_type?: string
+          device_id?: string
           duration_seconds?: number | null
           id?: string
-          sentinel_serial?: string
           session_id?: string
           trigger_source?: string
           updated_at?: string
@@ -456,37 +456,40 @@ export type Database = {
         Row: {
           color: string
           created_at: string
+          device_id: string
           enabled: boolean
           event_id: string
           icon: string | null
           id: string
           label: string
           role: string
-          sentinel_serial: string
+          source: string
           updated_at: string
         }
         Insert: {
           color: string
           created_at?: string
+          device_id: string
           enabled?: boolean
           event_id: string
           icon?: string | null
           id?: string
           label: string
           role: string
-          sentinel_serial: string
+          source: string
           updated_at?: string
         }
         Update: {
           color?: string
           created_at?: string
+          device_id?: string
           enabled?: boolean
           event_id?: string
           icon?: string | null
           id?: string
           label?: string
           role?: string
-          sentinel_serial?: string
+          source?: string
           updated_at?: string
         }
         Relationships: [
